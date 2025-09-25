@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.common.security.filter;
 
 import com.sparta.forusmarket.common.security.dto.AuthUser;
+import java.util.Collections;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
@@ -8,7 +9,7 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     private final AuthUser authUser;
 
     public JwtAuthenticationToken(AuthUser authUser) {
-        super(authUser.authorities());
+        super(Collections.emptyList());
         this.authUser = authUser;
         setAuthenticated(true);
     }

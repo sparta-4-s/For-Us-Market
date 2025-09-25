@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.common.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
 import com.sparta.forusmarket.common.security.dto.AuthUser;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Slf4j
@@ -30,6 +32,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+    private final JwtSecurityProperties jwtSecurityProperties;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        return jwtSecurityProperties.getSecret().getWhiteList().stream()
+                .anyMatch(path -> pathMatcher.match(path, requestURI));
+    }
 
     @Override
     protected void doFilterInternal(

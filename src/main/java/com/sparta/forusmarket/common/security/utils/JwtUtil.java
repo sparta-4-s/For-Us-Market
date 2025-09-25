@@ -1,5 +1,6 @@
 package com.sparta.forusmarket.common.security.utils;
 
+import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -8,33 +9,34 @@ import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Slf4j(topic = "JwtUtil")
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
 
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
+    private final JwtSecurityProperties jwtSecurityProperties;
 
-    @Value("${jwt.secret.key}")
-    private String secretKey;
     private Key key;
 
     @PostConstruct
     public void init() {
+        String secretKey = jwtSecurityProperties.getSecret().getKey();
         byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(bytes);
     }
 
     public String createToken(Long userId, String email) {
         Date date = new Date();
+        String PREFIX = jwtSecurityProperties.getToken().getPrefix();
+        long TOKEN_TIME = jwtSecurityProperties.getToken().getExpiration();
 
-        return BEARER_PREFIX +
+        return PREFIX +
                 Jwts.builder()
                         .setSubject(String.valueOf(userId))
                         .claim("email", email)
@@ -45,7 +47,9 @@ public class JwtUtil {
     }
 
     public String substringToken(String tokenValue) {
-        if (StringUtils.hasText(tokenValue) && tokenValue.startsWith(BEARER_PREFIX)) {
+        String PREFIX = jwtSecurityProperties.getToken().getPrefix();
+
+        if (StringUtils.hasText(tokenValue) && tokenValue.startsWith(PREFIX)) {
             return tokenValue.substring(7);
         }
         log.error("Not Found Token");

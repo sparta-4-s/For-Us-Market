@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.common.config;
 
 
+import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
 import com.sparta.forusmarket.common.security.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,7 @@ import org.springframework.security.web.servletapi.SecurityContextHolderAwareReq
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtSecurityProperties jwtSecurityProperties;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -44,8 +46,9 @@ public class SecurityConfig {
                 .rememberMe(AbstractHttpConfigurer::disable)     // 서버가 쿠키 발급하여 자동 로그인
 
                 .authorizeHttpRequests(auth -> auth
-                        // auth 도메인(로그인, 회원가입 등)은 허용
-                        .requestMatchers(request -> request.getRequestURI().startsWith("/auth")).permitAll()
+                        // WHITE_LIST 허용
+                        .requestMatchers(jwtSecurityProperties.getSecret().getWhiteList().toArray(new String[0]))
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
                 .build();

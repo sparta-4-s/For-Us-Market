@@ -16,4 +16,18 @@ spring:
         show_sql: true
         format_sql: true
 
+jwt:
+  secret:
+    aesKey: ${AES_KEY}
+    key: ${JWT_KEY}
+    whiteList:
+      - /api/v1/auth/**
+      - /api/v2/auth/**
 
+  token:
+    prefix: ${JWT_PREFIX}
+    refreshPrefix: ${REFRESH_PREFIX}
+    blackListPrefix: ${BLACK_PREFIX}
+    expiration: ${JWT_EXPIRATION}
+    refreshExpiration: ${REFRESH_EXPIRATION}
+    blackListExpiration: ${BLACK_EXPIRATION}
