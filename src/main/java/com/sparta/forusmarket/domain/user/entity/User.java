@@ -26,4 +26,10 @@ public class User extends BaseEntity {
     @Embedded
     private Address address;
 
+    public User(Long id) {
+        email = "@@";
+        name = "@@";
+        address = new Address();
+        password = "@@";
+    }
 }

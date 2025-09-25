@@ -37,4 +37,19 @@ public class Order extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     private OrderStatus orderStatus;
 
+    private Order(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
+        this.user = user;
+        this.product = product;
+        this.quantity = quantity;
+        this.price = price;
+        this.orderStatus = orderStatus;
+    }
+
+    public static Order of(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
+        return new Order(user, product, quantity, price, orderStatus);
+    }
+
+    public void changeStatus(OrderStatus orderStatus) {
+        this.orderStatus = orderStatus;
+    }
 }

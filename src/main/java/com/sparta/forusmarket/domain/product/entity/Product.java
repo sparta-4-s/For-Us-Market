@@ -30,4 +30,15 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
+    public Product(Long id) {
+        this.name = "Product ";
+        this.price = BigDecimal.ZERO;
+        this.stock = 5;
+        this.category = Category.NONE;
+        this.discountRate = BigDecimal.ZERO;
+    }
+
+    public void updateStock(int stock) {
+        this.stock = stock;
+    }
 }
