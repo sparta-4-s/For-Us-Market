@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
-public record UserSignupRequest(
+public record SignupRequest(
         @NotBlank
         String email,
 

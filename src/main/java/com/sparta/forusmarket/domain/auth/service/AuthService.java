@@ -1,7 +1,7 @@
 package com.sparta.forusmarket.domain.auth.service;
 
-import com.sparta.forusmarket.domain.auth.dto.request.UserSignupRequest;
-import com.sparta.forusmarket.domain.auth.dto.response.UserSignupResponse;
+import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
+import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.exception.AuthErrorCode;
 import com.sparta.forusmarket.domain.auth.exception.DuplicateEmailException;
 import com.sparta.forusmarket.domain.user.entity.User;
@@ -20,14 +20,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserSignupResponse signup(UserSignupRequest userSignupRequest) {
-        if (isDuplicateEmail(userSignupRequest.email())) {
+    public SignupResponse signup(SignupRequest signupRequest) {
+        if (isDuplicateEmail(signupRequest.email())) {
             throw new DuplicateEmailException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 
-        User user = userSignupRequest.toEntity(passwordEncoder.encode(userSignupRequest.password()));
+        User user = signupRequest.toEntity(passwordEncoder.encode(signupRequest.password()));
         userRepository.save(user);
-        return UserSignupResponse.from(user);
+        return SignupResponse.from(user);
     }
 
     private boolean isDuplicateEmail(String email) {
