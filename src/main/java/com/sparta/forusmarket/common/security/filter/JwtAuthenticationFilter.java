@@ -1,7 +1,6 @@
 package com.sparta.forusmarket.common.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.forusmarket.common.enums.UserRole;
 import com.sparta.forusmarket.common.security.dto.AuthUser;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -82,9 +81,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void setAuthentication(Claims claims) {
         Long userId = Long.valueOf(claims.getSubject());
         String email = claims.get("email", String.class);
-        UserRole userRole = UserRole.of(claims.get("userRole", String.class));
 
-        AuthUser authUser = new AuthUser(userId, email, userRole);
+        AuthUser authUser = new AuthUser(userId, email);
 
         Authentication authenticationToken = new JwtAuthenticationToken(authUser);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
