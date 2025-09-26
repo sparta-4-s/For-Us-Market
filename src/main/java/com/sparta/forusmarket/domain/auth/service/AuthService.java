@@ -34,8 +34,7 @@ public class AuthService {
         }
 
         User user = signupRequest.toEntity(passwordEncoder.encode(signupRequest.password()));
-        userRepository.save(user);
-        return SignupResponse.from(user);
+        return SignupResponse.from(userRepository.save(user));
     }
 
     @Transactional
