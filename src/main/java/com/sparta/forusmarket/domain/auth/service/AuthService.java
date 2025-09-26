@@ -53,7 +53,7 @@ public class AuthService {
     // 추후 블랙리스트 방식으로 로그아웃 구현 예정
 
     @Transactional
-    public Void withdraw(Long userId, WithdrawRequest withdrawRequest) {
+    public void withdraw(Long userId, WithdrawRequest withdrawRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidUserException(UserErrorCode.INVALID_USER));
 
@@ -62,7 +62,6 @@ public class AuthService {
         }
 
         userRepository.deleteById(userId);
-        return null;
     }
 
     private boolean isDuplicateEmail(String email) {

@@ -38,6 +38,7 @@ public class AuthController {
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal Long userId,
                                                     @Valid @RequestBody WithdrawRequest withdrawRequest) {
-        return ApiResponse.success(authService.withdraw(userId, withdrawRequest));
+        authService.withdraw(userId, withdrawRequest);
+        return ApiResponse.noContent();
     }
 }
