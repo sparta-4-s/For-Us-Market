@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.domain.user.entity;
 
 import com.sparta.forusmarket.common.entity.BaseEntity;
+import com.sparta.forusmarket.domain.user.dto.AddressDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -41,7 +42,9 @@ public class User extends BaseEntity {
         this.address = address;
     }
 
-    public static User from(String email, String name, String password, Address address) {
+    public static User from(String email, String name, String password, AddressDto addressDto) {
+        Address address = new Address(addressDto.city(), addressDto.street(), addressDto.street());
+        
         return User.builder()
                 .email(email)
                 .name(name)

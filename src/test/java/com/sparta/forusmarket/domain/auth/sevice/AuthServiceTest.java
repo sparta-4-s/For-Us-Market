@@ -14,6 +14,7 @@ import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.service.AuthService;
+import com.sparta.forusmarket.domain.user.dto.AddressDto;
 import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
@@ -45,7 +46,7 @@ public class AuthServiceTest {
                 "john@example.com",
                 "John Doe",
                 "Password123!",
-                new Address(
+                new AddressDto(
                         "김포시",
                         "풍무동 서해아파트 102-23213",
                         "123-345"));

@@ -1,6 +1,6 @@
 package com.sparta.forusmarket.domain.auth.dto.request;
 
-import com.sparta.forusmarket.domain.user.entity.Address;
+import com.sparta.forusmarket.domain.user.dto.AddressDto;
 import com.sparta.forusmarket.domain.user.entity.User;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -18,9 +18,9 @@ public record SignupRequest(
         String password,
 
         @Valid
-        Address address) {
+        AddressDto addressDto) {
 
     public User toEntity(String encodedPassword) {
-        return User.from(email, name, password, address);
+        return User.from(email, name, password, addressDto);
     }
 }
