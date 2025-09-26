@@ -2,7 +2,7 @@ spring:
   application:
     name: for-us-market
   config:
-    import: optional:file:.env[.properties]
+    import: optional:file:.env.local[.properties]
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -15,5 +15,31 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cache:
+    type: redis
+
+jwt:
+  secret:
+    aesKey: ${AES_KEY}
+    key: ${JWT_KEY}
+    whiteList:
+      - /api/v1/auth/**
+      - /api/v2/auth/**
+  token:
+    prefix: ${JWT_PREFIX}
+    refreshPrefix: ${REFRESH_PREFIX}
+    blackListPrefix: ${BLACK_PREFIX}
+    expiration: ${JWT_EXPIRATION}
+    refreshExpiration: ${REFRESH_EXPIRATION}
+    blackListExpiration: ${BLACK_EXPIRATION}
+
+dummy:
+  total_size: 50_000
+  batch_size: 5_000
 
 
