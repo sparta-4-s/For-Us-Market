@@ -23,7 +23,7 @@ public class Product extends BaseEntity {
     private String name;
 
     private BigDecimal price;
-    @Version
+
     private int stock;
 
     @Enumerated(value = EnumType.STRING)

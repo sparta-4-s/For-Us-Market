@@ -59,12 +59,12 @@ class OrderServiceTest {
                 .price(BigDecimal.ONE)
                 .build();
 
-        int numberOfThreads = 2;
+        int numberOfThreads = 3;
         ExecutorService executorService = Executors.newFixedThreadPool(24);
         CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
 
         // when
-        for (int i = 0; i < numberOfThreads; i++) {
+        for (int i = 0; i < numberOfThreads - 1; i++) {
             executorService.execute(() -> {
                 try {
                     barrier.await();
@@ -75,6 +75,7 @@ class OrderServiceTest {
             });
         }
 
+        barrier.await();
         executorService.shutdown();
 
         // then
