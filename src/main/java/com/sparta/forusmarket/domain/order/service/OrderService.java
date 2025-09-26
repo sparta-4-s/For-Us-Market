@@ -41,7 +41,7 @@ public class OrderService {
             if (stock < 0)
                 throw new IllegalArgumentException("Out of stock");
 
-            product.updateStock(stock);
+            product.increaseStock(-orderRequest.getQuantity());
 
             order = Order.of(
                     user,
@@ -56,7 +56,7 @@ public class OrderService {
                     product,
                     orderRequest.getQuantity(),
                     orderRequest.getPrice(),
-                    OrderStatus.FAIR
+                    OrderStatus.FAIL
             );
         }
 
@@ -94,11 +94,5 @@ public class OrderService {
         return orderRepository.findById(orderId).orElseThrow(
                 () -> new IllegalArgumentException("Order not found")
         );
-    }
-
-    @Transactional
-    public void createData() {
-        userRepository.save(new User(1L));
-        productRepository.save(new Product(1L));
     }
 }

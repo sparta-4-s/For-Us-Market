@@ -27,7 +27,7 @@ public class User extends BaseEntity {
     private Address address;
 
     public User(Long id) {
-        email = "@@";
+        email = "@@" + id;
         name = "@@";
         address = new Address();
         password = "@@";

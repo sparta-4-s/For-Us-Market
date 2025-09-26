@@ -36,10 +36,4 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable("orderId") Long orderId) {
         return ApiResponse.success(orderService.cancelOrder(orderId));
     }
-
-    @PostMapping("/api/v1/data")
-    public ResponseEntity<ApiResponse<Void>> createData() {
-        orderService.createData();
-        return ApiResponse.noContent();
-    }
 }
