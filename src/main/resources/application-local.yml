@@ -19,8 +19,8 @@ jwt:
     aesKey: ${AES_KEY}
     key: ${JWT_KEY}
     whiteList:
-      - /api/v1/auth/**
-      - /api/v2/auth/**
+      - /api/v1/auth/signup
+      - /api/v1/auth/login
 
   token:
     prefix: ${JWT_PREFIX}
