@@ -36,8 +36,8 @@ public class AuthController {
     // 추후 블랙리스트 방식으로 로그아웃 구현 예정
 
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal Long userId,
-                                                    @Valid @RequestBody WithdrawRequest withdrawRequest) {
+    public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal Long userId,
+                                                      @Valid @RequestBody WithdrawRequest withdrawRequest) {
         authService.withdraw(userId, withdrawRequest);
         return ApiResponse.noContent();
     }
