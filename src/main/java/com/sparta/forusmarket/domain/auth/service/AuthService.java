@@ -1,9 +1,13 @@
 package com.sparta.forusmarket.domain.auth.service;
 
+import com.sparta.forusmarket.common.security.utils.JwtUtil;
+import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
+import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.exception.AuthErrorCode;
 import com.sparta.forusmarket.domain.auth.exception.DuplicateEmailException;
+import com.sparta.forusmarket.domain.auth.exception.InvalidEmailOrPasswordException;
 import com.sparta.forusmarket.domain.user.entity.User;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public SignupResponse signup(SignupRequest signupRequest) {
@@ -30,7 +35,24 @@ public class AuthService {
         return SignupResponse.from(user);
     }
 
+    @Transactional
+    public LoginResponse login(LoginRequest loginRequest) {
+        User user = userRepository.findByEmail(loginRequest.email())
+                .orElseThrow(() -> new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD));
+
+        if (!isMatchedPassword(loginRequest.password(), user.getPassword())) {
+            throw new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD);
+        }
+
+        String accessToken = jwtUtil.createToken(user.getId(), loginRequest.email());
+        return LoginResponse.of(accessToken);
+    }
+
     private boolean isDuplicateEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
+    }
+
+    private boolean isMatchedPassword(String requestPassword, String password) {
+        return passwordEncoder.matches(password, requestPassword);
     }
 }

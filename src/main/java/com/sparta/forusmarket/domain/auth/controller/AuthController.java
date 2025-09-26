@@ -1,7 +1,9 @@
 package com.sparta.forusmarket.domain.auth.controller;
 
 import com.sparta.forusmarket.common.response.ApiResponse;
+import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
+import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -20,9 +22,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponse>> signup(
-            @Valid @RequestBody SignupRequest signupRequest) {
-        SignupResponse signupResponse = authService.signup(signupRequest);
-        return ApiResponse.created(signupResponse);
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody SignupRequest signupRequest) {
+        return ApiResponse.created(authService.signup(signupRequest));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return ApiResponse.created(authService.login(loginRequest));
     }
 }
