@@ -3,12 +3,15 @@ package com.sparta.forusmarket.domain.auth.service;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
+import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.exception.AuthErrorCode;
 import com.sparta.forusmarket.domain.auth.exception.DuplicateEmailException;
 import com.sparta.forusmarket.domain.auth.exception.InvalidEmailOrPasswordException;
 import com.sparta.forusmarket.domain.user.entity.User;
+import com.sparta.forusmarket.domain.user.exception.InvalidUserException;
+import com.sparta.forusmarket.domain.user.exception.UserErrorCode;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,6 +49,21 @@ public class AuthService {
 
         String accessToken = jwtUtil.createToken(user.getId(), loginRequest.email());
         return LoginResponse.of(accessToken);
+    }
+
+    // 추후 블랙리스트 방식으로 로그아웃 구현 예정
+
+    @Transactional
+    public Void withdraw(Long userId, WithdrawRequest withdrawRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidUserException(UserErrorCode.INVALID_USER));
+
+        if (!isMatchedPassword(withdrawRequest.password(), user.getPassword())) {
+            throw new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD);
+        }
+
+        userRepository.deleteById(userId);
+        return null;
     }
 
     private boolean isDuplicateEmail(String email) {
