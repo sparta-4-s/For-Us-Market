@@ -3,17 +3,12 @@ package com.sparta.forusmarket.domain.product.entity;
 import com.sparta.forusmarket.common.entity.BaseEntity;
 import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -39,4 +34,15 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
+    public Product(int stock) {
+        this.name = "Product ";
+        this.price = BigDecimal.ZERO;
+        this.stock = stock;
+        this.category = CategoryType.BOOKS_MEDIA;
+        this.discountRate = BigDecimal.ZERO;
+    }
+
+    public void increaseStock(int stock) {
+        this.stock += stock;
+    }
 }
