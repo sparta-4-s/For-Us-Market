@@ -2,6 +2,7 @@ package com.sparta.forusmarket.domain.product.service;
 
 import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
 
+import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
@@ -28,5 +29,22 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
         return ProductResponse.of(product);
+    }
+
+    @Transactional
+    public ProductResponse editProduct(Long productId, ProductEditRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
+
+        product.updateAll(
+                request.getName(),
+                request.getPrice(),
+                request.getStock(),
+                request.getDiscountRate(),
+                request.getCategory(),
+                request.getSubCategory()
+        );
+
+        return ProductResponse.of(productRepository.saveAndFlush(product));
     }
 }

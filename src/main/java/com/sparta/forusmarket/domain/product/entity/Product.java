@@ -63,4 +63,14 @@ public class Product extends BaseEntity {
                 .discountRate(discountRate)
                 .build();
     }
+
+    public void updateAll(String name, BigDecimal price, int stock, BigDecimal discountRate, CategoryType category,
+                          SubCategoryType subCategory) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.discountRate = discountRate;
+        this.category = category;
+        this.subCategory = subCategory;
+    }
 }
