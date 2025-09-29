@@ -4,6 +4,7 @@ import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RefreshTokenIssuer {
 
+    @Qualifier("stringTypeRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtSecurityProperties jwtSecurityProperties;
 
