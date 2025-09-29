@@ -36,29 +36,25 @@ public class OrderLogAspect {
         try {
             Object result = pjp.proceed();
 
-            if (result instanceof OrderResponse orderResponse) {
-                orderId = orderResponse.getId();
-                userId = orderResponse.getUserId();
-                productId = orderResponse.getProductId();
-                quantity = orderResponse.getQuantity();
-                price = orderResponse.getPrice();
-
-                log.info("[AUDIT-AFTER] return={}", result);
-                if(orderResponse.getStatus() == OrderStatus.SUCCESS) {
-                    OrderLog success = OrderLog.success(orderId, userId, productId, quantity, price);
-                    successRegistration(success);
-                }else{
-                    OrderLog fail = OrderLog.fail("Out of Stock");
-                    failRegistration(fail);
+            if (result instanceof OrderResponse resp) {
+                if (resp.getStatus() == OrderStatus.SUCCESS) {
+                    orderLogService.saveLog(OrderLog.success(
+                            resp.getId(), resp.getUserId(), resp.getProductId(),
+                            resp.getQuantity(), resp.getPrice()
+                    ));
+                } else {
+                    orderLogService.saveLog(OrderLog.fail("Order failed"));
                 }
             }
             return result;
         } catch (Throwable ex) {
-            log.error("[AUDIT-ERROR] op={}, ex={}", ex.toString(), ex);
-            OrderLog fail = OrderLog.fail(ex.getMessage().toString());
-            failRegistration(fail);
+            // 진짜 예외가 밖으로 던져질 때만 탐
+            log.error("[AUDIT-ERROR] ex={}", ex.toString(), ex);
+            try { orderLogService.saveLog(OrderLog.fail(String.valueOf(ex.getMessage()))); }
+            catch (Exception logEx) { log.error("[AUDIT-ERROR] 로그 저장 실패", logEx); }
             throw ex;
         }
+
     }
 
     @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.cancelOrder(..))" )
@@ -85,7 +81,7 @@ public class OrderLogAspect {
 
                 log.info("[AUDIT-AFTER] return={}", result);
                 OrderLog cancel = OrderLog.cancel(orderId, userId, productId, quantity, price, message);
-                cancleRegistration(cancel);
+                cancelRegistration(cancel);
             }
             return result;
         } catch (Throwable ex) {
@@ -112,7 +108,7 @@ public class OrderLogAspect {
         }
     }
 
-    private void cancleRegistration(OrderLog orderLog) throws Exception {
+    private void cancelRegistration(OrderLog orderLog) throws Exception {
         try{
             orderLogService.saveLog(orderLog);
         }catch(Exception logException){
