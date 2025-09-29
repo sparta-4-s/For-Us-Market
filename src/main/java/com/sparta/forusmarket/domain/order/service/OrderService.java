@@ -1,5 +1,6 @@
 package com.sparta.forusmarket.domain.order.service;
 
+import com.sparta.forusmarket.common.repository.RedisLockRepository;
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
 import com.sparta.forusmarket.domain.order.entity.Order;
@@ -26,6 +27,7 @@ public class OrderService {
     final private OrderRepository orderRepository;
     final private UserRepository userRepository;
     final private ProductRepository productRepository;
+    final private RedisLockRepository redisLockRepository;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
@@ -52,6 +54,14 @@ public class OrderService {
                 )
         );
         Order savedOrder = orderRepository.save(order);
+
+        while (!redisLockRepository.lock(savedOrder.getId())) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         try {
             // 재고 차감

@@ -13,6 +13,11 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
 jwt:
   secret:
     aesKey: ${AES_KEY}
@@ -20,6 +25,7 @@ jwt:
     whiteList:
       - /api/v1/auth/signup
       - /api/v1/auth/login
+      - /api/**
   token:
     prefix: ${JWT_PREFIX}
     refreshPrefix: ${REFRESH_PREFIX}
