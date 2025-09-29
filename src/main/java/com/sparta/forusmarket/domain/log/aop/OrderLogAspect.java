@@ -28,38 +28,29 @@ public class OrderLogAspect {
     @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.createOrder(..))" )
     public Object createOrder(ProceedingJoinPoint pjp) throws Throwable {
 
-        Long userId = null;
-        Long orderId = null;
-        Long productId = null;
-        Integer quantity = null;
-        BigDecimal price = null;
-        String message = null;
-
         log.info("[AUDIT-BEFORE] method={}", pjp.getSignature().toShortString());
 
         try {
             Object result = pjp.proceed();
 
-            if (result instanceof OrderResponse resp) {
-                if (resp.getStatus() == OrderStatus.SUCCESS) {
-                    // 주문 성공시 성공 로그 저장
-                    orderLogService.saveLog(OrderLog.success(
-                            resp.getId(), resp.getUserId(), resp.getProductId(),
-                            resp.getQuantity(), resp.getPrice()
-                    ));
-                } else {
-                    // 주문 실패(FAIL 응답) 시 실패 로그 저장
-                    orderLogService.saveLog(OrderLog.fail("Order failed"));
-                }
+            if (result instanceof OrderResponse resp && resp.getStatus() == OrderStatus.SUCCESS) {
+                // 주문 성공시 성공 로그 저장
+                orderLogService.saveLog(OrderLog.success(
+                        resp.getId(), resp.getUserId(), resp.getProductId(),
+                        resp.getQuantity(), resp.getPrice()
+                ));
+                log.info("[AUDIT-AFTER] success logged: orderId={}", resp.getId());
             }
             return result;
         } catch (Throwable ex) {
             log.error("[AUDIT-ERROR] ex={}", ex.toString(), ex);
-            try { orderLogService.saveLog(OrderLog.fail(String.valueOf(ex.getMessage()))); }
-            catch (Exception logEx) { log.error("[AUDIT-ERROR] 로그 저장 실패", logEx); }
+            try {
+                orderLogService.saveLog(OrderLog.fail(String.valueOf(ex.getMessage())));
+            } catch (Exception logEx) {
+                log.error("[AUDIT-ERROR] 로그 저장 실패", logEx);
+            }
             throw ex;
         }
-
     }
 
     /**
