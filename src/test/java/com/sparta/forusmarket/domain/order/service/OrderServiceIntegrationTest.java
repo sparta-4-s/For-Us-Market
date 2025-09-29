@@ -52,7 +52,7 @@ class OrderServiceIntegrationTest {
                 productRepository.save(Product.create(
                         "name",
                         BigDecimal.ONE,
-                        1,
+                        10,
                         SubCategoryType.EBOOK,
                         CategoryType.BOOKS_MEDIA,
                         BigDecimal.ONE
@@ -67,7 +67,7 @@ class OrderServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("두 개의 주문이 동시에 남은 재고를 구매하려 할 때")
+    @DisplayName("여러개의 주문이 동시에 남은 재고를 구매하려 할 때")
     void createOrder_concurrency_test() throws BrokenBarrierException, InterruptedException {
         // given
         OrderRequest orderRequest = OrderRequest.builder()
@@ -101,7 +101,7 @@ class OrderServiceIntegrationTest {
 
         // then
         Product product = productRepository.findById(productId).get();
-        Assertions.assertEquals(0L, product.getStock());
+        Assertions.assertEquals(1, product.getStock());
     }
 
     @Test
@@ -122,7 +122,7 @@ class OrderServiceIntegrationTest {
         OrderResponse orderResponse = orderService.createOrder(orderRequest);
 
         // then
-        Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.getStatus());
+        Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.status());
     }
 
     @Test

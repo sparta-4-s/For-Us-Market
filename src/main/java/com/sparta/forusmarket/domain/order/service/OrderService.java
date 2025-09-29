@@ -4,8 +4,12 @@ import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
 import com.sparta.forusmarket.domain.order.entity.Order;
 import com.sparta.forusmarket.domain.order.enums.OrderStatus;
+import com.sparta.forusmarket.domain.order.exception.OrderFailedException;
+import com.sparta.forusmarket.domain.order.exception.OrderNotFoundException;
 import com.sparta.forusmarket.domain.order.repository.OrderRepository;
 import com.sparta.forusmarket.domain.product.entity.Product;
+import com.sparta.forusmarket.domain.product.exception.ProductErrorCode;
+import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
@@ -25,13 +29,13 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        //TODO: 유저 서비스로 변경, 락
+        //TODO: 유저 서비스로 변경
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
                 () -> new IllegalArgumentException("User not found")
         );
-        //TODO: 상품 서비스로 변경, 락
+        //TODO: 상품 서비스로 변경
         Product product = productRepository.findById(orderRequest.getProductId()).orElseThrow(
-                () -> new IllegalArgumentException("Product not found")
+                () -> new ProductNotFoundException(ProductErrorCode.PRODUCT_NOT_FOUND)
         );
 
         // 주문 저장
@@ -53,7 +57,7 @@ public class OrderService {
             // 재고 차감
             product.reduceStock(orderRequest.getQuantity());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Order Failed");
+            throw new OrderFailedException();
         }
 
         return OrderResponse.from(savedOrder);
@@ -61,9 +65,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderResponse getOrderResponse(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new IllegalArgumentException("Order not found")
-        );
+        Order order = getOrderById(orderId);
 
         return OrderResponse.from(order);
     }
@@ -86,7 +88,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId).orElseThrow(
-                () -> new IllegalArgumentException("Order not found")
+                OrderNotFoundException::new
         );
     }
 
