@@ -3,12 +3,18 @@ package com.sparta.forusmarket.domain.product.entity;
 import com.sparta.forusmarket.common.entity.BaseEntity;
 import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -40,6 +46,30 @@ public class Product extends BaseEntity {
         this.stock = stock;
         this.category = CategoryType.BOOKS_MEDIA;
         this.discountRate = BigDecimal.ZERO;
+    }
+
+    @Builder
+    private Product(String name, BigDecimal price, int stock, SubCategoryType subCategory, CategoryType category,
+                    BigDecimal discountRate) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.subCategory = subCategory;
+        this.category = category;
+        this.discountRate = discountRate;
+    }
+
+    public static Product create(String name, BigDecimal price, int stock, SubCategoryType subCategory,
+                                 CategoryType category,
+                                 BigDecimal discountRate) {
+        return Product.builder()
+                .name(name)
+                .price(price)
+                .stock(stock)
+                .category(category)
+                .subCategory(subCategory)
+                .discountRate(discountRate)
+                .build();
     }
 
     public void increaseStock(int stock) {
