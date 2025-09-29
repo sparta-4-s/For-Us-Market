@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 
+import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
@@ -56,6 +57,34 @@ class ProductServiceTest {
                 .contains(1L, productName);
     }
 
+    @Test
+    @DisplayName("상품 정보 수정 성공")
+    void editProduct() {
+        // given
+        Product product = TestUtils.createEntity(Product.class, Map.of(
+                "id", 1L,
+                "name", "프라다 리나일론 체인 스트랩 호보백",
+                "stock", 9
+        ));
+
+        final Long productId = 1L;
+        ProductEditRequest request = ProductEditRequest.builder()
+                .name("수정수정")
+                .stock(100)
+                .build();
+
+        given(productRepository.findById(anyLong())).willReturn(Optional.of(product));
+        given(productRepository.saveAndFlush(product)).willReturn(product);
+
+        // when
+        ProductResponse productResponse = productService.editProduct(productId, request);
+
+        // then
+        assertThat(productResponse)
+                .extracting("stock", "name")
+                .contains(100, "수정수정");
+    }
+
     @Nested
     @DisplayName("단일 상품 조회")
     class GetProduct {
@@ -94,5 +123,4 @@ class ProductServiceTest {
                     .hasMessage("존재하지 않은 상품입니다.");
         }
     }
-
 }

@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.domain.product.controller;
 
 import com.sparta.forusmarket.common.response.ApiResponse;
+import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.service.ProductService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +33,13 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long productId) {
         ProductResponse productResponse = productService.getProductById(productId);
+        return ApiResponse.success(productResponse);
+    }
+
+    @PutMapping("/{productId}")
+    public ResponseEntity<ApiResponse<ProductResponse>> editProduct(@Valid @RequestBody ProductEditRequest request,
+                                                                    @PathVariable Long productId) {
+        ProductResponse productResponse = productService.editProduct(productId, request);
         return ApiResponse.success(productResponse);
     }
 }
