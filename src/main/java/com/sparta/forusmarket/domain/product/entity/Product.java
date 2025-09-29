@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -39,4 +40,49 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
+    public Product(int stock) {
+        this.name = "Product ";
+        this.price = BigDecimal.ZERO;
+        this.stock = stock;
+        this.category = CategoryType.BOOKS_MEDIA;
+        this.discountRate = BigDecimal.ZERO;
+    }
+
+    @Builder
+    private Product(String name, BigDecimal price, int stock, SubCategoryType subCategory, CategoryType category,
+                    BigDecimal discountRate) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.subCategory = subCategory;
+        this.category = category;
+        this.discountRate = discountRate;
+    }
+
+    public static Product create(String name, BigDecimal price, int stock, SubCategoryType subCategory,
+                                 CategoryType category,
+                                 BigDecimal discountRate) {
+        return Product.builder()
+                .name(name)
+                .price(price)
+                .stock(stock)
+                .category(category)
+                .subCategory(subCategory)
+                .discountRate(discountRate)
+                .build();
+    }
+
+    public void increaseStock(int stock) {
+        this.stock += stock;
+    }
+
+    public void updateAll(String name, BigDecimal price, int stock, BigDecimal discountRate, CategoryType category,
+                          SubCategoryType subCategory) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.discountRate = discountRate;
+        this.category = category;
+        this.subCategory = subCategory;
+    }
 }
