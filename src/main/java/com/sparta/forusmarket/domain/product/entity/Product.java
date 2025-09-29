@@ -42,7 +42,10 @@ public class Product extends BaseEntity {
         this.discountRate = BigDecimal.ZERO;
     }
 
-    public void increaseStock(int stock) {
-        this.stock += stock;
+    public void reduceStock(int quantity) {
+        if (this.stock < quantity)
+            throw new IllegalArgumentException("Out of stock");
+
+        this.stock -= quantity;
     }
 }

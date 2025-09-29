@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -24,45 +25,48 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        // 검증
+        //TODO: 유저 서비스로 변경, 락
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
                 () -> new IllegalArgumentException("User not found")
         );
+        //TODO: 상품 서비스로 변경, 락
         Product product = productRepository.findById(orderRequest.getProductId()).orElseThrow(
                 () -> new IllegalArgumentException("Product not found")
         );
 
-        // 엔티티 생성
-        Order order;
-
-        // 재고 차감
-        try {
-            int stock = product.getStock() - orderRequest.getQuantity();
-            if (stock < 0)
-                throw new IllegalArgumentException("Out of stock");
-
-            product.increaseStock(-orderRequest.getQuantity());
-
-            order = Order.of(
-                    user,
-                    product,
-                    orderRequest.getQuantity(),
-                    orderRequest.getPrice(),
-                    OrderStatus.SUCCESS
-            );
-        } catch (Exception e) {
-            order = Order.of(
-                    user,
-                    product,
-                    orderRequest.getQuantity(),
-                    orderRequest.getPrice(),
-                    OrderStatus.FAIL
-            );
-        }
-
+        // 주문 저장
+        Order order = Order.of(
+                user,
+                product,
+                orderRequest.getQuantity(),
+                orderRequest.getPrice(),
+                OrderStatus.SUCCESS,
+                orderRequest.getCity(),
+                orderRequest.getStreet(),
+                orderRequest.getZipcode()
+        );
         Order savedOrder = orderRepository.save(order);
 
+        try {
+            // 재고 차감
+            product.reduceStock(orderRequest.getQuantity());
+        } catch (IllegalArgumentException e) {
+            // 주문 실패 롤백
+            changeFailedOrderStatus(order);
+
+            throw new IllegalArgumentException("Order Failed");
+        }
+
         return OrderResponse.from(savedOrder);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void changeFailedOrderStatus(Order order) {
+        order.changeStatus(OrderStatus.FAIL);
+
+        orderRepository.save(order);
+        // TODO: 로깅
+
     }
 
     @Transactional(readOnly = true)
@@ -94,5 +98,10 @@ public class OrderService {
         return orderRepository.findById(orderId).orElseThrow(
                 () -> new IllegalArgumentException("Order not found")
         );
+    }
+
+    @Transactional
+    public void dummyData() {
+        userRepository.save(new User(1L));
     }
 }

@@ -1,12 +1,18 @@
 package com.sparta.forusmarket.domain.order.service;
 
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
+import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
+import com.sparta.forusmarket.domain.order.entity.Order;
+import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.order.repository.OrderRepository;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.user.entity.User;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,7 +25,7 @@ import java.util.concurrent.Executors;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class OrderServiceTest {
+class OrderServiceIntegrationTest {
 
     @Autowired
     private ProductRepository productRepository;
@@ -33,11 +39,6 @@ class OrderServiceTest {
     @Autowired
     private OrderService orderService;
 
-    @BeforeEach
-    void setUp() {
-
-    }
-
     @AfterEach
     void tearDown() {
         orderRepository.deleteAll();
@@ -49,17 +50,20 @@ class OrderServiceTest {
     @DisplayName("두 개의 주문이 동시에 남은 재고를 구매하려 할 때")
     void createOrder_concurrency_test() throws BrokenBarrierException, InterruptedException {
         // given
-        Product savedProduct = productRepository.save(new Product(1));
         User savedUser = userRepository.save(new User(1L));
+        Product savedProduct = productRepository.save(new Product(1));
 
         OrderRequest orderRequest = OrderRequest.builder()
                 .userId(savedUser.getId())
                 .productId(savedProduct.getId())
                 .quantity(1)
                 .price(BigDecimal.ONE)
+                .city("city")
+                .street("street")
+                .zipcode("111-111")
                 .build();
 
-        int numberOfThreads = 3;
+        int numberOfThreads = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(24);
         CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
 
@@ -80,7 +84,57 @@ class OrderServiceTest {
 
         // then
         Product product = productRepository.findById(savedProduct.getId()).get();
-
         Assertions.assertEquals(0L, product.getStock());
+    }
+
+    @Test
+    @DisplayName("주문 생성이 성공했을 때")
+    void createOrder_Success() {
+        // given
+        User savedUser = userRepository.save(new User(1L));
+        Product savedProduct = productRepository.save(new Product(1));
+
+        OrderRequest orderRequest = OrderRequest.builder()
+                .userId(savedUser.getId())
+                .productId(savedProduct.getId())
+                .quantity(1)
+                .price(BigDecimal.ONE)
+                .city("city")
+                .street("street")
+                .zipcode("zipcode")
+                .build();
+
+        // when
+        OrderResponse orderResponse = orderService.createOrder(orderRequest);
+
+        // then
+        Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.getStatus());
+    }
+
+    @Test
+    @DisplayName("주문 생성이 재고 부족으로 실패했을 때")
+    void createOrder_Failure() {
+        // given
+        User savedUser = userRepository.save(new User(1L));
+        Product savedProduct = productRepository.save(new Product(1));
+
+        OrderRequest orderRequest = OrderRequest.builder()
+                .userId(savedUser.getId())
+                .productId(savedProduct.getId())
+                .quantity(2)
+                .price(BigDecimal.ONE)
+                .city("city")
+                .street("street")
+                .zipcode("zipcode")
+                .build();
+
+        // when & then
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            orderService.createOrder(orderRequest);
+        });
+
+        Order failedOrder = orderRepository.findTopByUserIdAndProductIdOrderByCreatedAtDesc(savedUser.getId(), savedProduct.getId())
+                .orElseThrow();
+        Assertions.assertEquals(OrderStatus.FAIL, failedOrder.getOrderStatus());
     }
 }

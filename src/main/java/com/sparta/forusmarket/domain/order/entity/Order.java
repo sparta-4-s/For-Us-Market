@@ -4,21 +4,12 @@ import com.sparta.forusmarket.common.entity.BaseEntity;
 import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -46,16 +37,52 @@ public class Order extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     private OrderStatus orderStatus;
 
-    private Order(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
+    @Column(length = 50)
+    private String city;
+
+    @Column(length = 100)
+    private String street;
+
+    @Column(length = 100)
+    private String zipcode;
+
+    private Order(
+            User user,
+            Product product,
+            int quantity,
+            BigDecimal price,
+            OrderStatus orderStatus,
+            String city,
+            String street,
+            String zipcode) {
         this.user = user;
         this.product = product;
         this.quantity = quantity;
         this.price = price;
         this.orderStatus = orderStatus;
+        this.city = city;
+        this.street = street;
+        this.zipcode = zipcode;
     }
 
-    public static Order of(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
-        return new Order(user, product, quantity, price, orderStatus);
+    public static Order of(
+            User user,
+            Product product,
+            int quantity,
+            BigDecimal price,
+            OrderStatus orderStatus,
+            String city,
+            String street,
+            String zipcode) {
+        return new Order(
+                user,
+                product,
+                quantity,
+                price,
+                orderStatus,
+                city,
+                street,
+                zipcode);
     }
 
     public void changeStatus(OrderStatus orderStatus) {
