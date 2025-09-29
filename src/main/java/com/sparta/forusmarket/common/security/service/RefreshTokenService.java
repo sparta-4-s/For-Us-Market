@@ -54,9 +54,8 @@ public class RefreshTokenService {
         return Optional.of(TokenResponse.of(newAccessToken, newRefreshToken));
     }
 
-    public void deleteToken(Long userId) {
-        String refreshPrefix = jwtSecurityProperties.getToken().getRefreshPrefix();
-        String key = refreshPrefix + userId;
+    public void deleteToken(String refreshToken) {
+        String key = buildKey(refreshToken);
         redisTemplate.delete(key);
     }
 

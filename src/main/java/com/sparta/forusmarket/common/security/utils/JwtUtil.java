@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
@@ -54,6 +55,28 @@ public class JwtUtil {
         }
         log.error("Not Found Token");
         throw new NullPointerException("Not Found Token");
+    }
+
+    public String getTokenFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        String prefix = jwtSecurityProperties.getToken().getPrefix();
+
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(prefix)) {
+            return bearerToken.substring(prefix.length());
+        }
+        return null;
+    }
+
+    public long getTokenRemainingMillis(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            Date expiration = claims.getExpiration();
+            Date now = new Date();
+
+            return expiration.getTime() - now.getTime();
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     public Claims extractClaims(String token) {

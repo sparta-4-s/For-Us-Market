@@ -4,20 +4,22 @@ import com.sparta.forusmarket.common.response.ApiResponse;
 import com.sparta.forusmarket.common.security.dto.TokenResponse;
 import com.sparta.forusmarket.common.security.service.RefreshTokenService;
 import com.sparta.forusmarket.common.security.utils.CookieUtil;
+import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,6 +31,7 @@ public class AuthController {
     private final AuthService authService;
     private final CookieUtil cookieUtil;
     private final RefreshTokenService refreshTokenService;
+    private final JwtUtil jwtUtil;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody SignupRequest signupRequest) {
@@ -45,9 +48,8 @@ public class AuthController {
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<LoginResponse> reissue(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = cookieUtil.getCookieValue(request);
-
+    public ResponseEntity<LoginResponse> reissue(@CookieValue("refreshToken") String refreshToken,
+                                                 HttpServletResponse response) {
         TokenResponse tokenResponse = refreshTokenService.reissueTokens(
                         refreshToken)
                 .orElseThrow(() -> new SecurityException("유효하지 않은 Refresh Token입니다."));
@@ -56,12 +58,22 @@ public class AuthController {
         return ResponseEntity.ok(LoginResponse.of(tokenResponse.accessToken()));
     }
 
-    // 추후 블랙리스트 방식으로 로그아웃 구현 예정
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader,
+                                                    @CookieValue("refreshToken") String refreshToken,
+                                                    HttpServletResponse response) {
+        String accessToken = jwtUtil.substringToken(authorizationHeader);
+
+        authService.logout(accessToken, refreshToken);
+        cookieUtil.deleteCookie(response);
+        return ApiResponse.noContent();
+    }
 
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal Long userId,
-                                                      @Valid @RequestBody WithdrawRequest withdrawRequest) {
-        authService.withdraw(userId, withdrawRequest);
+                                                      @Valid @RequestBody WithdrawRequest withdrawRequest,
+                                                      @CookieValue("refreshToken") String refreshToken) {
+        authService.withdraw(userId, withdrawRequest, refreshToken);
         return ApiResponse.noContent();
     }
 }
