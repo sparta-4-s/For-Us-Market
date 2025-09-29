@@ -12,15 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -58,5 +52,19 @@ public class ProductController {
                                                                     @PathVariable Long productId) {
         ProductResponse productResponse = productService.editProduct(productId, request);
         return ApiResponse.success(productResponse);
+    }
+
+    @GetMapping("/api/v1/products/search")
+    public ResponseEntity<ApiPageResponse<ProductResponse>> search(@RequestParam(required = false) String name,
+                                                                   @RequestParam(required = false) SubCategoryType category,
+                                                                   @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        return ApiPageResponse.success(productService.search(name, category, pageable));
+    }
+
+    @GetMapping("/api/v2/products/search")
+    public ResponseEntity<ApiPageResponse<ProductResponse>> searchByCaching(@RequestParam(required = false) String name,
+                                                                            @RequestParam(required = false) SubCategoryType category,
+                                                                            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        return ApiPageResponse.success(productService.searchByCaching(name, category, pageable));
     }
 }
