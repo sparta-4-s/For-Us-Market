@@ -3,6 +3,8 @@ package com.sparta.forusmarket.common.security.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
 import com.sparta.forusmarket.common.security.dto.AuthUser;
+import com.sparta.forusmarket.common.security.exception.InvalidHeaderException;
+import com.sparta.forusmarket.common.security.exception.SecurityErrorCode;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -51,8 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader = httpRequest.getHeader("Authorization");
 
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            chain.doFilter(httpRequest, httpResponse);
-            return;
+            throw new InvalidHeaderException(SecurityErrorCode.INVALID_HEADER);
         }
 
         String jwt = jwtUtil.substringToken(authorizationHeader);
