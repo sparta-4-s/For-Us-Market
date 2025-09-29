@@ -1,0 +1,51 @@
+package com.sparta.forusmarket.domain.product.repository;
+
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Wildcard;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sparta.forusmarket.domain.product.entity.Product;
+import com.sparta.forusmarket.domain.product.entity.QProduct;
+import com.sparta.forusmarket.domain.product.type.SubCategoryType;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.util.ObjectUtils;
+
+@Slf4j
+@RequiredArgsConstructor
+public class ProductQueryRepositoryImpl implements ProductQueryRepository {
+
+    private final JPAQueryFactory jpaQueryFactory;
+
+    @Override
+    public Page<Product> findAllBySubCategory(SubCategoryType subCategoryType, Pageable pageable) {
+
+        QProduct product = QProduct.product;
+        List<Product> products = jpaQueryFactory
+                .selectFrom(product)
+                .where(eqSubCategory(product, subCategoryType))
+                .orderBy(product.updatedAt.desc(), product.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = jpaQueryFactory
+                .select(Wildcard.count)
+                .from(product)
+                .where(eqSubCategory(product, subCategoryType));
+
+        return PageableExecutionUtils.getPage(products, pageable, countQuery::fetchOne);
+    }
+
+    private BooleanExpression eqSubCategory(QProduct product, SubCategoryType subCategoryType) {
+        if (ObjectUtils.isEmpty(subCategoryType)) {
+            return null;
+        }
+
+        return product.subCategory.eq(subCategoryType);
+    }
+}
