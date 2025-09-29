@@ -25,8 +25,9 @@ public class ProductService {
     public Page<ProductResponse> search(String name, CategoryType category, Pageable pageable) {
 
         Page<Product> product = productRepository.search(name, category, pageable); //상품 검색
-
-        hotKeywordsRepository.save(HotKeywords.of(name)); //검색 키워드 저장
+        if (hotKeywordsRepository.findByKeyword(name).isEmpty()) {
+            hotKeywordsRepository.save(HotKeywords.of(name)); //검색 키워드 저장
+        }
 
         hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가
 
