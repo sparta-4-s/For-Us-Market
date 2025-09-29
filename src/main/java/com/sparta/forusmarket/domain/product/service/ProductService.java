@@ -8,7 +8,10 @@ import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
+import com.sparta.forusmarket.domain.product.type.SubCategoryType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,11 @@ public class ProductService {
     public ProductResponse createProduct(ProductRegisterRequest request) {
         Product product = productRepository.save(request.toEntity());
         return ProductResponse.of(product);
+    }
+
+    public Page<ProductResponse> getProducts(SubCategoryType category, Pageable pageable) {
+        return productRepository.findAllBySubCategory(category, pageable)
+                .map(ProductResponse::of);
     }
 
     public ProductResponse getProductById(Long productId) {
