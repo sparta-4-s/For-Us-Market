@@ -21,6 +21,6 @@ public record SignupRequest(
         AddressDto addressDto) {
 
     public User toEntity(String encodedPassword) {
-        return User.from(email, name, password, addressDto);
+        return User.from(email, name, encodedPassword, addressDto);
     }
 }
