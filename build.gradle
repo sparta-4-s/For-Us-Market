@@ -43,6 +43,15 @@ dependencies {
 
     implementation 'net.datafaker:datafaker:2.5.0' // dummy data test 용
 
+    // [redis]
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.data:spring-data-redis'
+    implementation 'org.apache.commons:commons-pool2'
+
+    //[jackson]
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
     // [Compile & Runtime & Test]
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
