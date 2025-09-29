@@ -7,11 +7,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import com.sparta.forusmarket.common.security.dto.TokenResponse;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
-import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.service.AuthService;
 import com.sparta.forusmarket.domain.user.dto.AddressDto;
@@ -100,10 +100,10 @@ public class AuthServiceTest {
         given(jwtUtil.createToken(anyLong(), anyString())).willReturn(token);
 
         //when
-        LoginResponse loginResponse = authService.login(loginRequest);
+        TokenResponse tokenResponse = authService.login(loginRequest);
 
         //then
-        assertThat(loginResponse.accessToken()).isEqualTo(token);
+        assertThat(tokenResponse.accessToken()).isEqualTo(token);
     }
 
     @Test
