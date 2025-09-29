@@ -40,6 +40,14 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
+    public Product(int stock) {
+        this.name = "Product ";
+        this.price = BigDecimal.ZERO;
+        this.stock = stock;
+        this.category = CategoryType.BOOKS_MEDIA;
+        this.discountRate = BigDecimal.ZERO;
+    }
+
     @Builder
     private Product(String name, BigDecimal price, int stock, SubCategoryType subCategory, CategoryType category,
                     BigDecimal discountRate) {
@@ -62,5 +70,9 @@ public class Product extends BaseEntity {
                 .subCategory(subCategory)
                 .discountRate(discountRate)
                 .build();
+    }
+
+    public void increaseStock(int stock) {
+        this.stock += stock;
     }
 }
