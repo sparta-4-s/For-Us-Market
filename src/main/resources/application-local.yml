@@ -8,24 +8,28 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
     properties:
       hibernate:
         show_sql: true
-        format_sql: true
+        format_sql: false
+
   data:
     redis:
       host: localhost
       port: 6379
+
+  cache:
+    type: redis
 
 jwt:
   secret:
     aesKey: ${AES_KEY}
     key: ${JWT_KEY}
     whiteList:
-      - /api/v1/auth/signup
-      - /api/v1/auth/login
-      - /api/**
+      - /api/v1/auth/**
+      - /api/v2/auth/**
+
   token:
     prefix: ${JWT_PREFIX}
     refreshPrefix: ${REFRESH_PREFIX}
