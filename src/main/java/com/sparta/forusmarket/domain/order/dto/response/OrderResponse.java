@@ -5,24 +5,23 @@ import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.user.dto.AddressDto;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Getter
 @Builder(access = AccessLevel.PRIVATE)
-public class OrderResponse {
-    private Long id;
-    private Long userId;
-    private Long productId;
-    private Integer quantity;
-    private BigDecimal price;
-    private OrderStatus status;
-    private AddressDto address;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
+public record OrderResponse(
+        Long id,
+        Long userId,
+        Long productId,
+        Integer quantity,
+        BigDecimal price,
+        OrderStatus status,
+        AddressDto address,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {
+    @Builder
     public static OrderResponse of(
             Long id,
             Long userId,
