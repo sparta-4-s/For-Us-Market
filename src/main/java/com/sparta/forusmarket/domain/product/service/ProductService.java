@@ -1,8 +1,11 @@
 package com.sparta.forusmarket.domain.product.service;
 
+import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
+
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
+import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,12 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductRegisterRequest request) {
         Product product = productRepository.save(request.toEntity());
+        return ProductResponse.of(product);
+    }
+
+    public ProductResponse getProductById(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(PRODUCT_NOT_FOUND));
         return ProductResponse.of(product);
     }
 }

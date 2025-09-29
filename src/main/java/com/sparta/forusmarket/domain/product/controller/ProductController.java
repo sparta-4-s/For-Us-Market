@@ -7,6 +7,8 @@ import com.sparta.forusmarket.domain.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,5 +26,11 @@ public class ProductController {
             @Valid @RequestBody ProductRegisterRequest request) {
         ProductResponse productResponse = productService.createProduct(request);
         return ApiResponse.created(productResponse);
+    }
+
+    @GetMapping("/{productId}")
+    public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long productId) {
+        ProductResponse productResponse = productService.getProductById(productId);
+        return ApiResponse.success(productResponse);
     }
 }
