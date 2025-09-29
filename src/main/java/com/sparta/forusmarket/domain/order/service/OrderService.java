@@ -7,13 +7,13 @@ import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.order.repository.OrderRepository;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
+import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -41,9 +41,11 @@ public class OrderService {
                 orderRequest.getQuantity(),
                 orderRequest.getPrice(),
                 OrderStatus.SUCCESS,
-                orderRequest.getCity(),
-                orderRequest.getStreet(),
-                orderRequest.getZipcode()
+                new Address(
+                        orderRequest.getCity(),
+                        orderRequest.getStreet(),
+                        orderRequest.getZipcode()
+                )
         );
         Order savedOrder = orderRepository.save(order);
 
@@ -51,22 +53,10 @@ public class OrderService {
             // 재고 차감
             product.reduceStock(orderRequest.getQuantity());
         } catch (IllegalArgumentException e) {
-            // 주문 실패 롤백
-            changeFailedOrderStatus(order);
-
             throw new IllegalArgumentException("Order Failed");
         }
 
         return OrderResponse.from(savedOrder);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void changeFailedOrderStatus(Order order) {
-        order.changeStatus(OrderStatus.FAIL);
-
-        orderRepository.save(order);
-        // TODO: 로깅
-
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +92,6 @@ public class OrderService {
 
     @Transactional
     public void dummyData() {
-        userRepository.save(new User(1L));
+        userRepository.save(new User("1@1", "name", "pass", new Address("city", "street", "zipcode")));
     }
 }

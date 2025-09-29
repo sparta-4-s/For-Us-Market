@@ -2,17 +2,16 @@ package com.sparta.forusmarket.domain.order.service;
 
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
-import com.sparta.forusmarket.domain.order.entity.Order;
 import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.order.repository.OrderRepository;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
+import com.sparta.forusmarket.domain.product.type.CategoryType;
+import com.sparta.forusmarket.domain.product.type.SubCategoryType;
+import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,17 +26,38 @@ import java.util.concurrent.Executors;
 @ActiveProfiles("test")
 class OrderServiceIntegrationTest {
 
+    Long userId;
+    Long productId;
     @Autowired
     private ProductRepository productRepository;
-
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private OrderRepository orderRepository;
-
     @Autowired
     private OrderService orderService;
+
+    @BeforeEach
+    void setUp() {
+        userId = !userRepository.findAll().isEmpty() ? userRepository.findAll().get(0).getId() :
+                userRepository.save(new User(
+                        "1@1",
+                        "name",
+                        "pass",
+                        new Address("city",
+                                "street",
+                                "zipcode"
+                        ))).getId();
+        productId = !productRepository.findAll().isEmpty() ? productRepository.findAll().get(0).getId() :
+                productRepository.save(Product.create(
+                        "name",
+                        BigDecimal.ONE,
+                        1,
+                        SubCategoryType.EBOOK,
+                        CategoryType.BOOKS_MEDIA,
+                        BigDecimal.ONE
+                )).getId();
+    }
 
     @AfterEach
     void tearDown() {
@@ -50,12 +70,9 @@ class OrderServiceIntegrationTest {
     @DisplayName("두 개의 주문이 동시에 남은 재고를 구매하려 할 때")
     void createOrder_concurrency_test() throws BrokenBarrierException, InterruptedException {
         // given
-        User savedUser = userRepository.save(new User(1L));
-        Product savedProduct = productRepository.save(new Product(1));
-
         OrderRequest orderRequest = OrderRequest.builder()
-                .userId(savedUser.getId())
-                .productId(savedProduct.getId())
+                .userId(userId)
+                .productId(productId)
                 .quantity(1)
                 .price(BigDecimal.ONE)
                 .city("city")
@@ -83,7 +100,7 @@ class OrderServiceIntegrationTest {
         executorService.shutdown();
 
         // then
-        Product product = productRepository.findById(savedProduct.getId()).get();
+        Product product = productRepository.findById(productId).get();
         Assertions.assertEquals(0L, product.getStock());
     }
 
@@ -91,12 +108,9 @@ class OrderServiceIntegrationTest {
     @DisplayName("주문 생성이 성공했을 때")
     void createOrder_Success() {
         // given
-        User savedUser = userRepository.save(new User(1L));
-        Product savedProduct = productRepository.save(new Product(1));
-
         OrderRequest orderRequest = OrderRequest.builder()
-                .userId(savedUser.getId())
-                .productId(savedProduct.getId())
+                .userId(userId)
+                .productId(productId)
                 .quantity(1)
                 .price(BigDecimal.ONE)
                 .city("city")
@@ -115,12 +129,9 @@ class OrderServiceIntegrationTest {
     @DisplayName("주문 생성이 재고 부족으로 실패했을 때")
     void createOrder_Failure() {
         // given
-        User savedUser = userRepository.save(new User(1L));
-        Product savedProduct = productRepository.save(new Product(1));
-
         OrderRequest orderRequest = OrderRequest.builder()
-                .userId(savedUser.getId())
-                .productId(savedProduct.getId())
+                .userId(userId)
+                .productId(productId)
                 .quantity(2)
                 .price(BigDecimal.ONE)
                 .city("city")
@@ -132,9 +143,5 @@ class OrderServiceIntegrationTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             orderService.createOrder(orderRequest);
         });
-
-        Order failedOrder = orderRepository.findTopByUserIdAndProductIdOrderByCreatedAtDesc(savedUser.getId(), savedProduct.getId())
-                .orElseThrow();
-        Assertions.assertEquals(OrderStatus.FAIL, failedOrder.getOrderStatus());
     }
 }
