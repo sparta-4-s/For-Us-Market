@@ -6,7 +6,6 @@ import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.service.ProductService;
-import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,14 +56,14 @@ public class ProductController {
 
     @GetMapping("/api/v1/products/search")
     public ResponseEntity<ApiPageResponse<ProductResponse>> search(@RequestParam(required = false) String name,
-                                                                   @RequestParam(required = false) CategoryType category,
+                                                                   @RequestParam(required = false) SubCategoryType category,
                                                                    @PageableDefault(page = 0, size = 10) Pageable pageable) {
         return ApiPageResponse.success(productService.search(name, category, pageable));
     }
 
     @GetMapping("/api/v2/products/search")
     public ResponseEntity<ApiPageResponse<ProductResponse>> searchByCaching(@RequestParam(required = false) String name,
-                                                                            @RequestParam(required = false) CategoryType category,
+                                                                            @RequestParam(required = false) SubCategoryType category,
                                                                             @PageableDefault(page = 0, size = 10) Pageable pageable) {
         return ApiPageResponse.success(productService.searchByCaching(name, category, pageable));
     }

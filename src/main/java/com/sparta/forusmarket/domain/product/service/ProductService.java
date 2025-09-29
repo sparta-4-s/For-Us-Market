@@ -8,7 +8,6 @@ import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
-import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -64,7 +63,7 @@ public class ProductService {
     }
 
     //캐싱x, DB 이용
-    public Page<ProductResponse> search(String name, CategoryType category, Pageable pageable) {
+    public Page<ProductResponse> search(String name, SubCategoryType category, Pageable pageable) {
 
         Page<Product> product = productRepository.search(name, category, pageable); //상품 검색
         if (hotKeywordsRepository.findByKeyword(name).isEmpty()) {
@@ -78,7 +77,7 @@ public class ProductService {
 
     //캐싱o, redis 이용
     @Cacheable(value = "product", key = "'all'")
-    public Page<ProductResponse> searchByCaching(String name, CategoryType category, Pageable pageable) {
+    public Page<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
 
         Page<Product> product = productRepository.search(name, category, pageable);
 
