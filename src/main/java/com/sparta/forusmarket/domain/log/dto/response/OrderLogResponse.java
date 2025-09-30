@@ -18,7 +18,7 @@ public class OrderLogResponse {
     private BigDecimal price;
     private LogStatus status;
     private String message;
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
     public static OrderLogResponse from(OrderLog log) {
         return new OrderLogResponse(
