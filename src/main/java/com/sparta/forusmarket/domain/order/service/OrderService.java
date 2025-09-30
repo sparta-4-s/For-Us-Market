@@ -31,6 +31,15 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
+        // Lettuce Lock
+        while (!redisLockRepository.lock(orderRequest.getUserId())) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         //TODO: 유저 서비스로 변경
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
                 () -> new IllegalArgumentException("User not found")
@@ -55,21 +64,15 @@ public class OrderService {
         );
         Order savedOrder = orderRepository.save(order);
 
-        while (!redisLockRepository.lock(savedOrder.getId())) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         try {
             // 재고 차감
             product.reduceStock(orderRequest.getQuantity());
         } catch (IllegalArgumentException e) {
             throw new OrderFailedException();
+        } finally {
+            // 락 해제
+            redisLockRepository.unlock(orderRequest.getUserId());
         }
-
         return OrderResponse.from(savedOrder);
     }
 

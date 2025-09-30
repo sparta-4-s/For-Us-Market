@@ -17,10 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -52,7 +49,7 @@ class OrderServiceIntegrationTest {
                 productRepository.save(Product.create(
                         "name",
                         BigDecimal.ONE,
-                        10,
+                        4,
                         SubCategoryType.EBOOK,
                         CategoryType.BOOKS_MEDIA,
                         BigDecimal.ONE
@@ -73,14 +70,14 @@ class OrderServiceIntegrationTest {
         OrderRequest orderRequest = OrderRequest.builder()
                 .userId(userId)
                 .productId(productId)
-                .quantity(1)
+                .quantity(2)
                 .price(BigDecimal.ONE)
                 .city("city")
                 .street("street")
                 .zipcode("111-111")
                 .build();
 
-        int numberOfThreads = 10;
+        int numberOfThreads = 3;
         ExecutorService executorService = Executors.newFixedThreadPool(24);
         CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
 
@@ -98,10 +95,11 @@ class OrderServiceIntegrationTest {
 
         barrier.await();
         executorService.shutdown();
+        executorService.awaitTermination(10, TimeUnit.SECONDS);
 
         // then
         Product product = productRepository.findById(productId).get();
-        Assertions.assertEquals(1, product.getStock());
+        Assertions.assertEquals(0, product.getStock());
     }
 
     @Test
