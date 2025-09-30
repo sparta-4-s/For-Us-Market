@@ -30,7 +30,7 @@ public class OrderService {
     final private ProductRepository productRepository;
     final private LockService lockService;
 
-    @LettuceLock(key = "#orderRequest.getUserId()")
+    @LettuceLock(key = "#orderRequest.getProductId()")
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
         //TODO: 유저 서비스로 변경
