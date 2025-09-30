@@ -8,29 +8,32 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 public class ProductEditRequest {
 
     @NotBlank(message = "상품명은 필수입니다.")
-    private final String name;
+    private String name;
 
     @NotNull(message = "상품 가격은 필수입니다.")
     @Min(value = 1000, message = "상품 가격은 1000원 이상이여야 합니다.")
-    private final BigDecimal price;
+    private BigDecimal price;
 
     @Min(value = 10, message = "상품 재고는 10개 이상이여야 합니다.")
-    private final int stock;
+    private int stock;
 
     @NotNull(message = "할인율은 필수입니다.")
     @DecimalMin(value = "0.0", message = "할인율은 0 이상이어야 합니다.")
     @DecimalMax(value = "100.0", message = "할인율은 100 이하이어야 합니다.")
-    private final BigDecimal discountRate;
+    private BigDecimal discountRate;
 
     @NotNull(message = "카테고리는 필수 값입니다.")
     private CategoryType category;
