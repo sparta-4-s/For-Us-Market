@@ -95,6 +95,7 @@ class OrderServiceIntegrationTest {
 
         barrier.await();
         executorService.shutdown();
+        // redis 종료 대기
         executorService.awaitTermination(10, TimeUnit.SECONDS);
 
         // then

@@ -1,4 +1,4 @@
-package com.sparta.forusmarket.common.repository;
+package com.sparta.forusmarket.common.lock.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

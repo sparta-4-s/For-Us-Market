@@ -1,6 +1,7 @@
 package com.sparta.forusmarket.domain.order.service;
 
-import com.sparta.forusmarket.common.repository.RedisLockRepository;
+import com.sparta.forusmarket.common.lock.aop.LettuceLock;
+import com.sparta.forusmarket.common.lock.service.LockService;
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
 import com.sparta.forusmarket.domain.order.entity.Order;
@@ -27,19 +28,11 @@ public class OrderService {
     final private OrderRepository orderRepository;
     final private UserRepository userRepository;
     final private ProductRepository productRepository;
-    final private RedisLockRepository redisLockRepository;
+    final private LockService lockService;
 
+    @LettuceLock(key = "#orderRequest.getUserId()")
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        // Lettuce Lock
-        while (!redisLockRepository.lock(orderRequest.getUserId())) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         //TODO: 유저 서비스로 변경
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
                 () -> new IllegalArgumentException("User not found")
@@ -69,10 +62,8 @@ public class OrderService {
             product.reduceStock(orderRequest.getQuantity());
         } catch (IllegalArgumentException e) {
             throw new OrderFailedException();
-        } finally {
-            // 락 해제
-            redisLockRepository.unlock(orderRequest.getUserId());
         }
+
         return OrderResponse.from(savedOrder);
     }
 
