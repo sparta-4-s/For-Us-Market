@@ -5,10 +5,10 @@ import com.sparta.forusmarket.domain.log.service.OrderLogService;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
 import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.lang.annotation.Around;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.*;
-import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -22,10 +22,9 @@ public class OrderLogAspect {
     private final OrderLogService orderLogService;
 
     /**
-     * 주문 서비스의 메서드 실행 전/후를 감싸서
-     * 주문 성공, 실패, 취소 등의 로그를 DB에 기록하는 AOP 클래스.
+     * 주문 서비스의 메서드 실행 전/후를 감싸서 주문 성공, 실패, 취소 등의 로그를 DB에 기록하는 AOP 클래스.
      */
-    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.createOrder(..))" )
+    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.createOrder(..))")
     public Object createOrder(ProceedingJoinPoint pjp) throws Throwable {
 
         log.info("[AUDIT-BEFORE] method={}", pjp.getSignature().toShortString());
@@ -33,13 +32,13 @@ public class OrderLogAspect {
         try {
             Object result = pjp.proceed();
 
-            if (result instanceof OrderResponse resp && resp.getStatus() == OrderStatus.SUCCESS) {
+            if (result instanceof OrderResponse resp && resp.status() == OrderStatus.SUCCESS) {
                 // 주문 성공시 성공 로그 저장
                 orderLogService.saveLog(OrderLog.success(
-                        resp.getId(), resp.getUserId(), resp.getProductId(),
-                        resp.getQuantity(), resp.getPrice()
+                        resp.id(), resp.userId(), resp.productId(),
+                        resp.quantity(), resp.price()
                 ));
-                log.info("[AUDIT-AFTER] success logged: orderId={}", resp.getId());
+                log.info("[AUDIT-AFTER] success logged: orderId={}", resp.id());
             }
             return result;
         } catch (Throwable ex) {
@@ -60,7 +59,7 @@ public class OrderLogAspect {
      * @return cancelOrder 메서드의 원래 반환값(OrderResponse)
      * @throws Throwable 원래 메서드가 던지는 예외 그대로 전파
      */
-    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.cancelOrder(..))" )
+    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.cancelOrder(..))")
     public Object cancelOrder(ProceedingJoinPoint pjp) throws Throwable {
 
         Long userId = null;
@@ -76,11 +75,11 @@ public class OrderLogAspect {
             Object result = pjp.proceed();
 
             if (result instanceof OrderResponse orderResponse) {
-                orderId = orderResponse.getId();
-                userId = orderResponse.getUserId();
-                productId = orderResponse.getProductId();
-                quantity = orderResponse.getQuantity();
-                price = orderResponse.getPrice();
+                orderId = orderResponse.id();
+                userId = orderResponse.userId();
+                productId = orderResponse.productId();
+                quantity = orderResponse.quantity();
+                price = orderResponse.price();
 
                 log.info("[AUDIT-AFTER] return={}", result);
                 // 주문 취소 성공 시 취소 로그 저장
@@ -96,7 +95,9 @@ public class OrderLogAspect {
         }
     }
 
-    /** 주문 실패 로그 저장 (실패 시 메인 트랜잭션에 영향 없음) */
+    /**
+     * 주문 실패 로그 저장 (실패 시 메인 트랜잭션에 영향 없음)
+     */
     private void failRegistration(OrderLog orderLog) throws Exception {
         try {
             orderLogService.saveLog(orderLog);
@@ -105,11 +106,13 @@ public class OrderLogAspect {
         }
     }
 
-    /** 주문 취소 로그 저장 (실패 시 메인 트랜잭션에 영향 없음) */
+    /**
+     * 주문 취소 로그 저장 (실패 시 메인 트랜잭션에 영향 없음)
+     */
     private void cancelRegistration(OrderLog orderLog) throws Exception {
-        try{
+        try {
             orderLogService.saveLog(orderLog);
-        }catch(Exception logException){
+        } catch (Exception logException) {
             log.error("로그 저장 실패: {}", logException.getMessage());
         }
     }

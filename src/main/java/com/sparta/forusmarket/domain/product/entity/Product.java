@@ -3,18 +3,13 @@ package com.sparta.forusmarket.domain.product.entity;
 import com.sparta.forusmarket.common.entity.BaseEntity;
 import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -40,14 +35,6 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
-    public Product(int stock) {
-        this.name = "Product ";
-        this.price = BigDecimal.ZERO;
-        this.stock = stock;
-        this.category = CategoryType.BOOKS_MEDIA;
-        this.discountRate = BigDecimal.ZERO;
-    }
-
     @Builder
     private Product(String name, BigDecimal price, int stock, SubCategoryType subCategory, CategoryType category,
                     BigDecimal discountRate) {
@@ -72,10 +59,6 @@ public class Product extends BaseEntity {
                 .build();
     }
 
-    public void increaseStock(int stock) {
-        this.stock += stock;
-    }
-
     public void updateAll(String name, BigDecimal price, int stock, BigDecimal discountRate, CategoryType category,
                           SubCategoryType subCategory) {
         this.name = name;
@@ -84,5 +67,12 @@ public class Product extends BaseEntity {
         this.discountRate = discountRate;
         this.category = category;
         this.subCategory = subCategory;
+    }
+
+    public void reduceStock(int quantity) {
+        if (this.stock < quantity)
+            throw new IllegalArgumentException("Out of stock");
+
+        this.stock -= quantity;
     }
 }

@@ -70,7 +70,7 @@ public class ProductService {
             hotKeywordsRepository.save(HotKeywords.of(name)); //검색 키워드 저장
         }
 
-        hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가
+        /*hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가*/
 
         return product.map(ProductResponse::of);
     }

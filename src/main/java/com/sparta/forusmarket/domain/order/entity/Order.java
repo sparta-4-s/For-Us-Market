@@ -3,22 +3,15 @@ package com.sparta.forusmarket.domain.order.entity;
 import com.sparta.forusmarket.common.entity.BaseEntity;
 import com.sparta.forusmarket.domain.order.enums.OrderStatus;
 import com.sparta.forusmarket.domain.product.entity.Product;
+import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -46,16 +39,40 @@ public class Order extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     private OrderStatus orderStatus;
 
-    private Order(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
+    @Embedded
+    private Address address;
+
+    @Builder
+    private Order(
+            User user,
+            Product product,
+            int quantity,
+            BigDecimal price,
+            OrderStatus orderStatus,
+            Address address) {
         this.user = user;
         this.product = product;
         this.quantity = quantity;
         this.price = price;
         this.orderStatus = orderStatus;
+        this.address = address;
     }
 
-    public static Order of(User user, Product product, int quantity, BigDecimal price, OrderStatus orderStatus) {
-        return new Order(user, product, quantity, price, orderStatus);
+    public static Order of(
+            User user,
+            Product product,
+            int quantity,
+            BigDecimal price,
+            OrderStatus orderStatus,
+            Address address) {
+        return Order.builder()
+                .user(user)
+                .product(product)
+                .quantity(quantity)
+                .price(price)
+                .orderStatus(orderStatus)
+                .address(address)
+                .build();
     }
 
     public void changeStatus(OrderStatus orderStatus) {
