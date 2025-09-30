@@ -1,10 +1,12 @@
 package com.sparta.forusmarket.domain.auth.service;
 
+import com.sparta.forusmarket.common.security.dto.TokenResponse;
+import com.sparta.forusmarket.common.security.service.RedisBlacklistService;
+import com.sparta.forusmarket.common.security.service.RefreshTokenService;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
-import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.exception.AuthErrorCode;
 import com.sparta.forusmarket.domain.auth.exception.DuplicateEmailException;
@@ -26,6 +28,9 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
+    private final RedisBlacklistService redisBlacklistService;
+
 
     @Transactional
     public SignupResponse signup(SignupRequest signupRequest) {
@@ -38,7 +43,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest loginRequest) {
+    public TokenResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.email())
                 .orElseThrow(() -> new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD));
 
@@ -46,14 +51,26 @@ public class AuthService {
             throw new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD);
         }
 
-        String accessToken = jwtUtil.createToken(user.getId(), loginRequest.email());
-        return LoginResponse.of(accessToken);
+        String accessToken = jwtUtil.createToken(user.getId(), user.getEmail());
+        String refreshToken = refreshTokenService.saveToken(user.getId());
+
+        return TokenResponse.of(accessToken, refreshToken);
     }
 
-    // 추후 블랙리스트 방식으로 로그아웃 구현 예정
+    public void logout(String accessToken, String refreshToken) {
+        long remainingMillis = jwtUtil.getTokenRemainingMillis(accessToken);
+
+        if (remainingMillis > 0) {
+            redisBlacklistService.addToken(accessToken, remainingMillis);
+        }
+
+        if (refreshToken != null) {
+            refreshTokenService.deleteToken(refreshToken);
+        }
+    }
 
     @Transactional
-    public void withdraw(Long userId, WithdrawRequest withdrawRequest) {
+    public void withdraw(Long userId, WithdrawRequest withdrawRequest, String refreshToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidUserException(UserErrorCode.INVALID_USER));
 
@@ -61,14 +78,15 @@ public class AuthService {
             throw new InvalidEmailOrPasswordException(AuthErrorCode.INVALID_EMAIL_OR_PASSWORD);
         }
 
+        refreshTokenService.deleteToken(refreshToken);
         userRepository.deleteById(userId);
     }
 
     private boolean isDuplicateEmail(String email) {
-        return userRepository.findByEmail(email).isPresent();
+        return userRepository.existsByEmail(email);
     }
 
     private boolean isMatchedPassword(String requestPassword, String password) {
-        return passwordEncoder.matches(password, requestPassword);
+        return passwordEncoder.matches(requestPassword, password);
     }
 }

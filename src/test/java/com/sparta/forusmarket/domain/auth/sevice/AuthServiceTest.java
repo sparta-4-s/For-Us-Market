@@ -5,13 +5,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
 
+import com.sparta.forusmarket.common.security.dto.TokenResponse;
+import com.sparta.forusmarket.common.security.service.RedisBlacklistService;
+import com.sparta.forusmarket.common.security.service.RefreshTokenService;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.auth.dto.request.LoginRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.SignupRequest;
 import com.sparta.forusmarket.domain.auth.dto.request.WithdrawRequest;
-import com.sparta.forusmarket.domain.auth.dto.response.LoginResponse;
 import com.sparta.forusmarket.domain.auth.dto.response.SignupResponse;
 import com.sparta.forusmarket.domain.auth.service.AuthService;
 import com.sparta.forusmarket.domain.user.dto.AddressDto;
@@ -38,6 +41,10 @@ public class AuthServiceTest {
     private UserRepository userRepository;
     @Mock
     private JwtUtil jwtUtil;
+    @Mock
+    private RefreshTokenService refreshTokenService;
+    @Mock
+    private RedisBlacklistService redisBlacklistService;
 
     @Test
     public void 회원가입에_성공한다() throws Exception {
@@ -61,7 +68,7 @@ public class AuthServiceTest {
 
         ReflectionTestUtils.setField(user, "id", 1L);
 
-        given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
+        given(userRepository.existsByEmail(anyString())).willReturn(false);
         given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
         given(userRepository.save(any(User.class))).willReturn(user);
 
@@ -94,16 +101,35 @@ public class AuthServiceTest {
 
         ReflectionTestUtils.setField(user, "id", 1L);
 
-        String token = "kugasFkhgvqbhj";
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
-        given(jwtUtil.createToken(anyLong(), anyString())).willReturn(token);
+        given(jwtUtil.createToken(anyLong(), anyString())).willReturn("accessToken");
+        given(refreshTokenService.saveToken(user.getId())).willReturn("refreshToken");
 
         //when
-        LoginResponse loginResponse = authService.login(loginRequest);
+        TokenResponse tokenResponse = authService.login(loginRequest);
 
         //then
-        assertThat(loginResponse.accessToken()).isEqualTo(token);
+        assertThat(tokenResponse.accessToken()).isEqualTo("accessToken");
+        assertThat(tokenResponse.refreshToken()).isEqualTo("refreshToken");
+    }
+
+    @Test
+    public void 로그아웃에_성공한다() throws Exception {
+        //given
+        String accessToken = "accessToken";
+        String refreshToken = "refreshToken";
+
+        given(jwtUtil.getTokenRemainingMillis(accessToken)).willReturn(10000L);
+        willDoNothing().given(redisBlacklistService).addToken(accessToken, 10000L);
+        willDoNothing().given(refreshTokenService).deleteToken(refreshToken);
+
+        //when
+        authService.logout(accessToken, refreshToken);
+
+        //then
+        then(redisBlacklistService).should().addToken(accessToken, 10000L);
+        then(refreshTokenService).should().deleteToken(refreshToken);
     }
 
     @Test
@@ -111,6 +137,7 @@ public class AuthServiceTest {
         // given
         String rawPassword = "test1234!";
         WithdrawRequest withdrawRequest = new WithdrawRequest(rawPassword);
+        String refreshToken = "zsvakfdgnl";
 
         User user = new User(
                 "test@test.com",
@@ -127,9 +154,10 @@ public class AuthServiceTest {
         given(passwordEncoder.matches(anyString(), anyString())).willReturn(true);
 
         // when
-        authService.withdraw(user.getId(), withdrawRequest);
+        authService.withdraw(user.getId(), withdrawRequest, refreshToken);
 
         // then
-        verify(userRepository).deleteById(user.getId());
+        then(refreshTokenService).should().deleteToken(refreshToken);
+        then(userRepository).should().deleteById(user.getId());
     }
 }
