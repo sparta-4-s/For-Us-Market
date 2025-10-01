@@ -1,7 +1,5 @@
 package com.sparta.forusmarket.common.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,18 +19,18 @@ import java.util.Map;
 public class CachingConfig {
 
     @Bean
-    public RedisCacheManager redisCacheManager(RedisConnectionFactory cf, @Qualifier("redisObjectMapper") ObjectMapper objectMapper) {
-        var valueSerializer = new GenericJackson2JsonRedisSerializer(objectMapper); // DTO 캐싱
+    public RedisCacheManager redisCacheManager(RedisConnectionFactory cf) {
+        var valueSerializer = new GenericJackson2JsonRedisSerializer(); // DTO 캐싱
         var base = RedisCacheConfiguration.defaultCacheConfig()
                 .disableCachingNullValues()
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
-                .prefixCacheNameWith("v6:"); // 캐시 네임스페이스 버저닝
+                        RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
 
         Map<String, RedisCacheConfiguration> perCache = new HashMap<>();
-        perCache.put("product:list", base.entryTtl(Duration.ofMinutes(5)));
+        perCache.put("product", base.entryTtl(Duration.ofMinutes(30)));
+        perCache.put("product:ranking", base.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(base)
