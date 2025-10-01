@@ -11,6 +11,8 @@ import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -42,6 +44,15 @@ public class ProductService {
     public Page<ProductResponse> getProductsWithCoveringIndex(SubCategoryType category, Pageable pageable) {
         return productRepository.findAllBySubCategoryWithCoveringIndex(category, pageable)
                 .map(ProductResponse::of);
+    }
+
+    public List<ProductResponse> getProductsNoOffset(SubCategoryType category,
+                                                     Long lastProductId,      // 이전 페이지의 마지막 id
+                                                     LocalDateTime lastUpdatedAt, // 이전 페이지의 마지막 updatedAt
+                                                     int pageSize) {
+        return productRepository.findAllBySubCategoryNoOffset(category, lastProductId, lastUpdatedAt, pageSize).stream()
+                .map(ProductResponse::of)
+                .toList();
     }
 
     public ProductResponse getProductById(Long productId) {

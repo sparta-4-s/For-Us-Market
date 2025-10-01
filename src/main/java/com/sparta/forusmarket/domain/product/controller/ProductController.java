@@ -52,6 +52,18 @@ public class ProductController {
         return ApiPageResponse.success(productResponses);
     }
 
+    @GetMapping("/api/v3/products")
+    public ResponseEntity<List<ProductResponse>> getProductsNoOffset(
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long lastProductId,
+            @RequestParam(required = false) LocalDateTime lastUpdatedAt,
+            @RequestParam(required = false) SubCategoryType category) {
+
+        List<ProductResponse> productResponses = productService.getProductsNoOffset(category, lastProductId,
+                lastUpdatedAt, size);
+        return ResponseEntity.ok(productResponses);
+    }
+
     @GetMapping("/api/v1/products/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long productId) {
         ProductResponse productResponse = productService.getProductById(productId);
