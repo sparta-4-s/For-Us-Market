@@ -4,12 +4,14 @@ import com.sparta.forusmarket.domain.hotKeywords.entity.HotKeywords;
 import com.sparta.forusmarket.domain.hotKeywords.repository.HotKeywordsRepository;
 import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
+import com.sparta.forusmarket.domain.product.dto.response.ProductPageResponse;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,24 +67,32 @@ public class ProductService {
     //캐싱x, DB 이용
     public Page<ProductResponse> search(String name, SubCategoryType category, Pageable pageable) {
 
-        Page<Product> product = productRepository.search(name, category, pageable); //상품 검색
-        if (hotKeywordsRepository.findByKeyword(name).isEmpty()) {
+        Page<Product> product = productRepository.search(name, category, pageable);
+        if (hotKeywordsRepository.findByKeyword(name) == null) {
             hotKeywordsRepository.save(HotKeywords.of(name)); //검색 키워드 저장
         }
 
-        /*hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가*/
+        hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가
 
         return product.map(ProductResponse::of);
     }
 
     //캐싱o, redis 이용
-    @Cacheable(value = "product", key = "'all'")
-    public Page<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
-
-        Page<Product> product = productRepository.search(name, category, pageable);
+    @Cacheable(cacheNames = "product:list",
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize",
+            unless = "#result == null || #result.totalElements == 0")
+    public ProductPageResponse<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
+        Page<Product> products = productRepository.search(name, category, pageable);
 
         String key = "product:ranking";
         redisTemplate.opsForZSet().incrementScore(key, name, 1);
-        return product.map(ProductResponse::of);
+
+        return ProductPageResponse.from(products.map(ProductResponse::of));
     }
-}
+
+
+    @CacheEvict(value = "product", key = "'list'")
+    public void evictProductCache() {
+        // 캐시 삭제 후 실행할 로직 (없으면 비워둬도 됨)
+    }
+} //도커에서 작업하면 되나요?

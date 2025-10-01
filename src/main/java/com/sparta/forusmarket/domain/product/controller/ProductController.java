@@ -4,6 +4,7 @@ import com.sparta.forusmarket.common.response.ApiPageResponse;
 import com.sparta.forusmarket.common.response.ApiResponse;
 import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
+import com.sparta.forusmarket.domain.product.dto.response.ProductPageResponse;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.service.ProductService;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
@@ -17,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/products")
+//@RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -62,9 +63,15 @@ public class ProductController {
     }
 
     @GetMapping("/api/v2/products/search")
-    public ResponseEntity<ApiPageResponse<ProductResponse>> searchByCaching(@RequestParam(required = false) String name,
-                                                                            @RequestParam(required = false) SubCategoryType category,
-                                                                            @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        return ApiPageResponse.success(productService.searchByCaching(name, category, pageable));
+    public ResponseEntity<ProductPageResponse<ProductResponse>> searchByCaching(@RequestParam(required = false) String name,
+                                                                                @RequestParam(required = false) SubCategoryType category,
+                                                                                @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        return ResponseEntity.ok(productService.searchByCaching(name, category, pageable));
+    }
+
+    @DeleteMapping("/api/v2/products/search")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct() {
+        productService.evictProductCache();
+        return ApiResponse.success(null);
     }
 }

@@ -46,10 +46,10 @@ public class SecurityConfig {
                 .rememberMe(AbstractHttpConfigurer::disable)     // 서버가 쿠키 발급하여 자동 로그인
 
                 .authorizeHttpRequests(auth -> auth
-                        // WHITE_LIST 허용
-                        .requestMatchers(jwtSecurityProperties.getSecret().getWhiteList().toArray(new String[0]))
-                        .permitAll()
-                        .anyRequest().authenticated()
+                                // WHITE_LIST 허용
+//                        .requestMatchers(jwtSecurityProperties.getSecret().getWhiteList().toArray(new String[0]))
+//                        .permitAll()
+                                .anyRequest().permitAll()
                 )
                 .build();
     }
