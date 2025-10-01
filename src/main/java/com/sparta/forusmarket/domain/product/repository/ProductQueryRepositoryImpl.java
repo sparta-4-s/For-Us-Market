@@ -41,6 +41,33 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository {
         return PageableExecutionUtils.getPage(products, pageable, countQuery::fetchOne);
     }
 
+    @Override
+    public Page<Product> findAllBySubCategoryWithCoveringIndex(SubCategoryType subCategoryType, Pageable pageable) {
+        QProduct product = QProduct.product;
+
+        List<Long> ids = jpaQueryFactory
+                .select(product.id)
+                .from(product)
+                .where(eqSubCategory(product, subCategoryType))
+                .orderBy(product.updatedAt.desc(), product.id.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        List<Product> products = jpaQueryFactory
+                .selectFrom(product)
+                .where(product.id.in(ids))
+                .orderBy(product.updatedAt.desc(), product.id.desc())
+                .fetch();
+
+        JPAQuery<Long> countQuery = jpaQueryFactory
+                .select(Wildcard.count)
+                .from(product)
+                .where(eqSubCategory(product, subCategoryType));
+
+        return PageableExecutionUtils.getPage(products, pageable, countQuery::fetchOne);
+    }
+
     private BooleanExpression eqSubCategory(QProduct product, SubCategoryType subCategoryType) {
         if (ObjectUtils.isEmpty(subCategoryType)) {
             return null;

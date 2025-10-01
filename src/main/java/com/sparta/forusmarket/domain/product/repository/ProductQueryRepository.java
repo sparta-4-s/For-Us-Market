@@ -8,4 +8,6 @@ import org.springframework.data.domain.Pageable;
 public interface ProductQueryRepository {
 
     Page<Product> findAllBySubCategory(SubCategoryType subCategoryType, Pageable pageable);
+
+    Page<Product> findAllBySubCategoryWithCoveringIndex(SubCategoryType subCategoryType, Pageable pageable);
 }

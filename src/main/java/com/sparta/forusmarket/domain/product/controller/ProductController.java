@@ -41,7 +41,18 @@ public class ProductController {
         return ApiPageResponse.success(productResponses);
     }
 
-    @GetMapping("/{productId}")
+    @GetMapping("/api/v2/products")
+    public ResponseEntity<ApiPageResponse<ProductResponse>> getProductsWithCoveringIndex(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) SubCategoryType category) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductResponse> productResponses = productService.getProductsWithCoveringIndex(category, pageable);
+        return ApiPageResponse.success(productResponses);
+    }
+
+    @GetMapping("/api/v1/products/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(@PathVariable Long productId) {
         ProductResponse productResponse = productService.getProductById(productId);
         return ApiResponse.success(productResponse);
