@@ -9,17 +9,17 @@ import org.springframework.stereotype.Service;
 public class LockService {
     private final RedisLockRepository redisLockRepository;
 
-    public void lock(Long id) {
-        while (!redisLockRepository.lock(id)) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+    public boolean tryLock(String key, String uuid, long timeoutMs, int tryTimeMs, long ttlMs) throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
+            if (redisLockRepository.lock(key, uuid, ttlMs))
+                return true;
+            Thread.sleep(tryTimeMs);
         }
+        return false;
     }
 
-    public void unlock(Long id) {
-        redisLockRepository.unlock(id);
+    public void unlock(String key, String uuid) {
+        redisLockRepository.unlock(key, uuid);
     }
 }

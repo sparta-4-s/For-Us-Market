@@ -4,6 +4,7 @@ import com.sparta.forusmarket.common.response.ApiPageResponse;
 import com.sparta.forusmarket.common.response.ApiResponse;
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
+import com.sparta.forusmarket.domain.order.service.OrderLockService;
 import com.sparta.forusmarket.domain.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +17,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService orderService;
+    private final OrderLockService orderLockService;
 
     @PostMapping("/api/v1/orders")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
-        return ApiResponse.created(orderService.createOrder(orderRequest));
+        return ApiResponse.created(orderLockService.createOrderWithLock(orderRequest));
     }
 
     @GetMapping("/api/v1/orders/{orderId}")

@@ -18,6 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -32,7 +33,7 @@ class OrderServiceIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
-    private OrderService orderService;
+    private OrderLockService orderLockService;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +50,7 @@ class OrderServiceIntegrationTest {
                 productRepository.save(Product.create(
                         "name",
                         BigDecimal.ONE,
-                        4,
+                        90,
                         SubCategoryType.EBOOK,
                         CategoryType.BOOKS_MEDIA,
                         BigDecimal.ONE
@@ -70,23 +71,28 @@ class OrderServiceIntegrationTest {
         OrderRequest orderRequest = OrderRequest.builder()
                 .userId(userId)
                 .productId(productId)
-                .quantity(2)
+                .quantity(1)
                 .price(BigDecimal.ONE)
                 .city("city")
                 .street("street")
                 .zipcode("111-111")
                 .build();
 
-        int numberOfThreads = 3;
-        ExecutorService executorService = Executors.newFixedThreadPool(24);
+        // 배타락 테스트시 히카리 db풀 크기 만큼 설정
+        int numberOfThreads = 41;
+        ExecutorService executorService = Executors.newFixedThreadPool(48);
         CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
 
+        // 시작 시간 측정
+        long start = System.currentTimeMillis();
+        AtomicInteger executeCount = new AtomicInteger(0);
         // when
         for (int i = 0; i < numberOfThreads - 1; i++) {
             executorService.execute(() -> {
                 try {
                     barrier.await();
-                    orderService.createOrder(orderRequest);
+                    orderLockService.createOrderWithLock(orderRequest);
+                    executeCount.incrementAndGet();
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
                 }
@@ -95,12 +101,18 @@ class OrderServiceIntegrationTest {
 
         barrier.await();
         executorService.shutdown();
-        // redis 종료 대기
-        executorService.awaitTermination(10, TimeUnit.SECONDS);
+
+        // redis가 포함된 작업 완료 대기
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS))
+            executorService.shutdownNow();
+        // 종료 시간 측정
+        long end = System.currentTimeMillis();
+
+        System.out.println("멀티스레드 실행 횟수 : " + executeCount.get() + "실행 시간 : " + (end - start) + "ms");
 
         // then
         Product product = productRepository.findById(productId).get();
-        Assertions.assertEquals(0, product.getStock());
+        Assertions.assertEquals(50, product.getStock());
     }
 
     @Test
@@ -118,7 +130,7 @@ class OrderServiceIntegrationTest {
                 .build();
 
         // when
-        OrderResponse orderResponse = orderService.createOrder(orderRequest);
+        OrderResponse orderResponse = orderLockService.createOrderWithLock(orderRequest);
 
         // then
         Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.status());
@@ -140,7 +152,7 @@ class OrderServiceIntegrationTest {
 
         // when & then
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            orderService.createOrder(orderRequest);
+            orderLockService.createOrderWithLock(orderRequest);
         });
     }
 }

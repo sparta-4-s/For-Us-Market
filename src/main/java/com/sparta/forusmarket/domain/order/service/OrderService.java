@@ -1,7 +1,5 @@
 package com.sparta.forusmarket.domain.order.service;
 
-import com.sparta.forusmarket.common.lock.aop.LettuceLock;
-import com.sparta.forusmarket.common.lock.service.LockService;
 import com.sparta.forusmarket.domain.order.dto.request.OrderRequest;
 import com.sparta.forusmarket.domain.order.dto.response.OrderResponse;
 import com.sparta.forusmarket.domain.order.entity.Order;
@@ -15,6 +13,8 @@ import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.user.entity.Address;
 import com.sparta.forusmarket.domain.user.entity.User;
+import com.sparta.forusmarket.domain.user.exception.InvalidUserException;
+import com.sparta.forusmarket.domain.user.exception.UserErrorCode;
 import com.sparta.forusmarket.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,16 +28,13 @@ public class OrderService {
     final private OrderRepository orderRepository;
     final private UserRepository userRepository;
     final private ProductRepository productRepository;
-    final private LockService lockService;
 
-    @LettuceLock(key = "#orderRequest.getProductId()")
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        //TODO: 유저 서비스로 변경
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
-                () -> new IllegalArgumentException("User not found")
+                () -> new InvalidUserException(UserErrorCode.INVALID_USER)
         );
-        //TODO: 상품 서비스로 변경
+
         Product product = productRepository.findById(orderRequest.getProductId()).orElseThrow(
                 () -> new ProductNotFoundException(ProductErrorCode.PRODUCT_NOT_FOUND)
         );
@@ -57,12 +54,12 @@ public class OrderService {
         );
         Order savedOrder = orderRepository.save(order);
 
-        try {
-            // 재고 차감
-            product.reduceStock(orderRequest.getQuantity());
-        } catch (IllegalArgumentException e) {
+        // 재고 차감
+        if (product.getStock() < orderRequest.getQuantity())
             throw new OrderFailedException();
-        }
+
+        product.reduceStock(orderRequest.getQuantity());
+        productRepository.flush();
 
         return OrderResponse.from(savedOrder);
     }

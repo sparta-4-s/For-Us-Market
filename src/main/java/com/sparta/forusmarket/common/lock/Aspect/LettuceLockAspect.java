@@ -13,12 +13,17 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.UUID;
 
 @Slf4j
 @Aspect
 @Component
 @RequiredArgsConstructor
 public class LettuceLockAspect {
+    private static final String LOCK_PREFIX = "LOCK:";
     private final LockService lockService;
 
     @Around("@annotation(lettuceLock)")
@@ -37,22 +42,49 @@ public class LettuceLockAspect {
         String stringKey = parser.parseExpression(lettuceLock.key()).getValue(evaluationContext, String.class);
 
         if (stringKey == null || stringKey.isBlank()) {
-            log.info("Key is blank");
-            return joinPoint.proceed();
+            log.info("Key value is null or blank");
+            throw new IllegalArgumentException("Key value is null or blank");
         }
 
-        long key;
-        try {
-            key = Long.parseLong(stringKey);
-        } catch (NumberFormatException e) {
-            log.info("Key type must be Long : {}", stringKey);
-            return joinPoint.proceed();
+        // lock
+        String uniqueId = UUID.randomUUID().toString();
+        String LockPrefixKey = LOCK_PREFIX + stringKey;
+        int maxRetryCount = 3;
+
+        for (int i = 1; i <= maxRetryCount; i++) {
+            boolean available = lockService.tryLock(LockPrefixKey, uniqueId, 4000, 50, 5000);
+
+            // 락 획득 실패
+            if (!available) {
+                log.info("{} : Retry Count{}", uniqueId, i);
+                continue;
+            }
+
+            // 락 획득 성공
+            log.info("프로세스 락 : {}", uniqueId);
+            Object result = joinPoint.proceed();
+//
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    // DB 커밋 성공 후 호출
+                    public void afterCommit() {
+                        lockService.unlock(LockPrefixKey, uniqueId);
+                        log.info("프로세스 언락 (트랜잭션 완료) : {}", uniqueId);
+                    }
+                });
+            } else {
+                // 트랜잭션이 없는 경우 바로 언락
+                lockService.unlock(LockPrefixKey, uniqueId);
+                log.info("프로세스 언락 : {}", uniqueId);
+            }
+
+            lockService.unlock(LockPrefixKey, uniqueId);
+            return result;
         }
 
-        lockService.lock(key);
-        Object result = joinPoint.proceed();
-        lockService.unlock(key);
-
-        return result;
+        // 재시도 3회 모두 실패 시
+        log.info("To many Request");
+        throw new IllegalArgumentException("To many Request");
     }
 }
