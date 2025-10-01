@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.time.Duration;
 import java.util.Collections;
 
-@RequiredArgsConstructor
 @Repository
-public class RedisLockRepository {
+@RequiredArgsConstructor
+public class LettuceLockRepository {
     private final RedisTemplate<String, String> redisTemplate;
 
     public Boolean lock(String key, String uuid, long ttl) {

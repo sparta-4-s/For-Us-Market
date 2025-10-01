@@ -1,19 +1,20 @@
 package com.sparta.forusmarket.common.lock.service;
 
-import com.sparta.forusmarket.common.lock.repository.RedisLockRepository;
+import com.sparta.forusmarket.common.lock.repository.LettuceLockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class LockService {
-    private final RedisLockRepository redisLockRepository;
+public class LettuceLockService {
+    private final LettuceLockRepository redisLockRepository;
 
     public boolean tryLock(String key, String uuid, long timeoutMs, int tryTimeMs, long ttlMs) throws InterruptedException {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeoutMs) {
-            if (redisLockRepository.lock(key, uuid, ttlMs))
+            if (redisLockRepository.lock(key, uuid, ttlMs)) {
                 return true;
+            }
             Thread.sleep(tryTimeMs);
         }
         return false;

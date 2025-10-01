@@ -33,6 +33,8 @@ class OrderServiceIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
+    private OrderService orderService;
+    @Autowired
     private OrderLockService orderLockService;
 
     @BeforeEach
@@ -79,19 +81,20 @@ class OrderServiceIntegrationTest {
                 .build();
 
         // 배타락 테스트시 히카리 db풀 크기 만큼 설정
-        int numberOfThreads = 41;
-        ExecutorService executorService = Executors.newFixedThreadPool(48);
-        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
+        int numberOfThreads = 40;
+        ExecutorService executorService = Executors.newFixedThreadPool(55);
+        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads + 1);
 
         // 시작 시간 측정
         long start = System.currentTimeMillis();
         AtomicInteger executeCount = new AtomicInteger(0);
         // when
-        for (int i = 0; i < numberOfThreads - 1; i++) {
+        for (int i = 0; i < numberOfThreads; i++) {
             executorService.execute(() -> {
                 try {
                     barrier.await();
-                    orderLockService.createOrderWithLock(orderRequest);
+                    //orderService.createOrderV2(orderRequest);
+                    orderLockService.createOrderWithRedissonLock(orderRequest);
                     executeCount.incrementAndGet();
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
@@ -130,7 +133,7 @@ class OrderServiceIntegrationTest {
                 .build();
 
         // when
-        OrderResponse orderResponse = orderLockService.createOrderWithLock(orderRequest);
+        OrderResponse orderResponse = orderLockService.createOrderWithLettuceLock(orderRequest);
 
         // then
         Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.status());
@@ -152,7 +155,7 @@ class OrderServiceIntegrationTest {
 
         // when & then
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            orderLockService.createOrderWithLock(orderRequest);
+            orderLockService.createOrderWithLettuceLock(orderRequest);
         });
     }
 }

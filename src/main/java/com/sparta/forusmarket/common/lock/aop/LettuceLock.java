@@ -8,5 +8,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface LettuceLock {
-    String key() default "";
+    // SpEL로 파싱할 키
+    String key();
 }

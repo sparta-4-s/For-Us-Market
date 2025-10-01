@@ -21,7 +21,7 @@ public class OrderController {
 
     @PostMapping("/api/v1/orders")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
-        return ApiResponse.created(orderLockService.createOrderWithLock(orderRequest));
+        return ApiResponse.created(orderLockService.createOrderWithLettuceLock(orderRequest));
     }
 
     @GetMapping("/api/v1/orders/{orderId}")

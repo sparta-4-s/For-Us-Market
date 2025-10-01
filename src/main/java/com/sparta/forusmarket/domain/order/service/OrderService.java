@@ -29,13 +29,50 @@ public class OrderService {
     final private UserRepository userRepository;
     final private ProductRepository productRepository;
 
+    // Lettuce Lock 대상
     @Transactional
-    public OrderResponse createOrder(OrderRequest orderRequest) {
+    public OrderResponse createOrderV1(OrderRequest orderRequest) {
         User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
                 () -> new InvalidUserException(UserErrorCode.INVALID_USER)
         );
 
         Product product = productRepository.findById(orderRequest.getProductId()).orElseThrow(
+                () -> new ProductNotFoundException(ProductErrorCode.PRODUCT_NOT_FOUND)
+        );
+
+        // 주문 저장
+        Order order = Order.of(
+                user,
+                product,
+                orderRequest.getQuantity(),
+                orderRequest.getPrice(),
+                OrderStatus.SUCCESS,
+                new Address(
+                        orderRequest.getCity(),
+                        orderRequest.getStreet(),
+                        orderRequest.getZipcode()
+                )
+        );
+        Order savedOrder = orderRepository.save(order);
+
+        // 재고 차감
+        if (product.getStock() < orderRequest.getQuantity())
+            throw new OrderFailedException();
+
+        product.reduceStock(orderRequest.getQuantity());
+        productRepository.flush();
+
+        return OrderResponse.from(savedOrder);
+    }
+
+    // 배타락
+    @Transactional
+    public OrderResponse createOrderV2(OrderRequest orderRequest) {
+        User user = userRepository.findById(orderRequest.getUserId()).orElseThrow(
+                () -> new InvalidUserException(UserErrorCode.INVALID_USER)
+        );
+
+        Product product = productRepository.findByIdWithPessimistLock(orderRequest.getProductId()).orElseThrow(
                 () -> new ProductNotFoundException(ProductErrorCode.PRODUCT_NOT_FOUND)
         );
 
