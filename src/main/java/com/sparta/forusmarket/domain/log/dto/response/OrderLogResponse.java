@@ -1,5 +1,9 @@
 package com.sparta.forusmarket.domain.log.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.sparta.forusmarket.domain.log.entity.OrderLog;
 import com.sparta.forusmarket.domain.log.enums.LogStatus;
 import lombok.AllArgsConstructor;
@@ -18,6 +22,9 @@ public class OrderLogResponse {
     private BigDecimal price;
     private LogStatus status;
     private String message;
+
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
 
     public static OrderLogResponse from(OrderLog log) {

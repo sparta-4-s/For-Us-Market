@@ -1,5 +1,7 @@
 package com.sparta.forusmarket.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -12,22 +14,31 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableCaching
 public class CachingConfig {
 
     @Bean
-    public CacheManager cacheManager(RedisConnectionFactory cf) {
-        RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
-                .entryTtl(Duration.ofMinutes(3L)); // 캐쉬 저장 시간 3분 설정
+    public RedisCacheManager redisCacheManager(RedisConnectionFactory cf) {
+        var valueSerializer = new GenericJackson2JsonRedisSerializer(); // DTO 캐싱
+        var base = RedisCacheConfiguration.defaultCacheConfig()
+                .disableCachingNullValues()
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
+                .prefixCacheNameWith("v7:"); // 캐시 네임스페이스 버저닝
 
-        return RedisCacheManager
-                .RedisCacheManagerBuilder
-                .fromConnectionFactory(cf)
-                .cacheDefaults(redisCacheConfiguration)
+        Map<String, RedisCacheConfiguration> perCache = new HashMap<>();
+        perCache.put("product", base.entryTtl(Duration.ofMinutes(5)));
+
+        return RedisCacheManager.builder(cf)
+                .cacheDefaults(base)
+                .withInitialCacheConfigurations(perCache)
+                .enableStatistics()
                 .build();
     }
 }
