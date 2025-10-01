@@ -1,10 +1,10 @@
 package com.sparta.forusmarket.domain.product.service;
 
+import com.sparta.forusmarket.common.response.RestPage;
 import com.sparta.forusmarket.domain.hotKeywords.entity.HotKeywords;
 import com.sparta.forusmarket.domain.hotKeywords.repository.HotKeywordsRepository;
 import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
 import com.sparta.forusmarket.domain.product.dto.request.ProductRegisterRequest;
-import com.sparta.forusmarket.domain.product.dto.response.ProductPageResponse;
 import com.sparta.forusmarket.domain.product.dto.response.ProductResponse;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
@@ -15,7 +15,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +27,6 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final HotKeywordsRepository hotKeywordsRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
     public ProductResponse createProduct(ProductRegisterRequest request) {
@@ -78,21 +76,16 @@ public class ProductService {
     }
 
     //캐싱o, redis 이용
-    @Cacheable(cacheNames = "product:list",
-            key = "#pageable.pageNumber + '-' + #pageable.pageSize",
-            unless = "#result == null || #result.totalElements == 0")
-    public ProductPageResponse<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
+    @Cacheable(cacheNames = "product", key = "#name + ':' + #pageable.pageSize + '-' + #pageable.pageNumber")
+    public RestPage<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
+
         Page<Product> products = productRepository.search(name, category, pageable);
 
-        String key = "product:ranking";
-        redisTemplate.opsForZSet().incrementScore(key, name, 1);
-
-        return ProductPageResponse.from(products.map(ProductResponse::of));
+        return new RestPage<>(products.map(ProductResponse::of));
     }
 
 
-    @CacheEvict(value = "product", key = "'list'")
-    public void evictProductCache() {
-        // 캐시 삭제 후 실행할 로직 (없으면 비워둬도 됨)
+    @CacheEvict(value = "product")
+    public void evictProductCache() { //캐시 삭제
     }
-} //도커에서 작업하면 되나요?
+}
