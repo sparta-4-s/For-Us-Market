@@ -9,18 +9,25 @@ import org.springframework.stereotype.Service;
 public class LettuceLockService {
     private final LettuceLockRepository redisLockRepository;
 
-    public boolean tryLock(String key, String uuid, long timeoutMs, int tryTimeMs, long ttlMs) throws InterruptedException {
+    public boolean tryLock(String key, String uuid, long timeoutMs, int tryTimeMs, long ttlMs) {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeoutMs) {
             if (redisLockRepository.lock(key, uuid, ttlMs)) {
                 return true;
             }
-            Thread.sleep(tryTimeMs);
+            try {
+                Thread.sleep(tryTimeMs);
+            } catch (InterruptedException e) {
+                // 스레드 강제 종료
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("lock interrupted");
+            }
         }
         return false;
+
     }
 
-    public void unlock(String key, String uuid) {
-        redisLockRepository.unlock(key, uuid);
+    public Boolean unlock(String key, String uuid) {
+        return redisLockRepository.unlock(key, uuid);
     }
 }

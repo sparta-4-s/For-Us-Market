@@ -52,35 +52,42 @@ public class LettuceLockAspect {
         int maxRetryCount = 3;
 
         for (int i = 1; i <= maxRetryCount; i++) {
-            boolean available = lockService.tryLock(lockPrefixKey, uniqueId, 4000, 50, 5000);
+            try {
+                boolean available = lockService.tryLock(lockPrefixKey, uniqueId, 4000, 50, 5000);
 
-            // 락 획득 실패
-            if (!available) {
-                log.info("{} : Retry Count{}", uniqueId, i);
-                continue;
-            }
+                // 락 획득 실패
+                if (!available) {
+                    log.info("{} : Retry Count{}", uniqueId, i);
+                    continue;
+                }
 
-            // 락 획득 성공
-            log.info("프로세스 락 : {}", uniqueId);
-            Object result = joinPoint.proceed();
+                // 락 획득 성공
+                log.info("프로세스 락 : {}", uniqueId);
+                Object result = joinPoint.proceed();
 //
-            if (TransactionSynchronizationManager.isSynchronizationActive()) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    // DB 커밋 성공 후 호출
-                    @Override
-                    public void afterCommit() {
-                        lockService.unlock(lockPrefixKey, uniqueId);
-                        log.info("프로세스 언락 (트랜잭션 완료) : {}", uniqueId);
-                    }
-                });
-            } else {
-                // 트랜잭션이 없는 경우 바로 언락
-                lockService.unlock(lockPrefixKey, uniqueId);
-                log.info("프로세스 언락 : {}", uniqueId);
-            }
+                if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        // DB 커밋 성공 후 호출
+                        @Override
+                        public void afterCommit() {
+                            lockService.unlock(lockPrefixKey, uniqueId);
+                            log.info("프로세스 언락 (트랜잭션 완료) : {}", uniqueId);
+                        }
+                    });
+                } else {
+                    // 트랜잭션이 없는 경우 바로 언락
+                    lockService.unlock(lockPrefixKey, uniqueId);
+                    log.info("프로세스 언락 : {}", uniqueId);
+                }
 
-            lockService.unlock(lockPrefixKey, uniqueId);
-            return result;
+                return result;
+            } catch (Throwable e) {
+                // 트랜잭션 롤백 시 처리
+                if (lockService.unlock(lockPrefixKey, uniqueId)) {
+                    log.info("프로세스 언락 (트랜잭션 롤백) : {}", uniqueId);
+                }
+                throw e;
+            }
         }
 
         // 재시도 3회 모두 실패 시

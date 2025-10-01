@@ -52,7 +52,7 @@ class OrderServiceIntegrationTest {
                 productRepository.save(Product.create(
                         "name",
                         BigDecimal.ONE,
-                        90,
+                        89,
                         SubCategoryType.EBOOK,
                         CategoryType.BOOKS_MEDIA,
                         BigDecimal.ONE
@@ -73,7 +73,7 @@ class OrderServiceIntegrationTest {
         OrderRequest orderRequest = OrderRequest.builder()
                 .userId(userId)
                 .productId(productId)
-                .quantity(1)
+                .quantity(3)
                 .price(BigDecimal.ONE)
                 .city("city")
                 .street("street")
@@ -93,8 +93,8 @@ class OrderServiceIntegrationTest {
             executorService.execute(() -> {
                 try {
                     barrier.await();
-                    //orderService.createOrderV2(orderRequest);
-                    orderLockService.createOrderWithRedissonLock(orderRequest);
+                    //orderService.createOrderWithPessimistLock(orderRequest);
+                    orderLockService.createOrderWithLettuceLock(orderRequest);
                     executeCount.incrementAndGet();
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
@@ -115,7 +115,7 @@ class OrderServiceIntegrationTest {
 
         // then
         Product product = productRepository.findById(productId).get();
-        Assertions.assertEquals(50, product.getStock());
+        Assertions.assertEquals(2, product.getStock());
     }
 
     @Test

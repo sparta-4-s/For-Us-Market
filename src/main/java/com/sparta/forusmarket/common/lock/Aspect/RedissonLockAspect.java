@@ -84,7 +84,12 @@ public class RedissonLockAspect {
             }
             return result;
         } catch (Throwable e) {
-            throw new IllegalArgumentException("To many Request");
+            // 트랜잭션 롤백 시 처리
+            if (lock != null && lock.isHeldByCurrentThread()) {
+                lockService.unlock(lock);
+                log.info("프로세스 언락 : {}", uniqueId);
+            }
+            throw e;
         }
     }
 }

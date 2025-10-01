@@ -22,8 +22,9 @@ public class RedissonLockService {
             }
             return null;
         } catch (InterruptedException e) {
+            // 스레드 강제 종료
             Thread.currentThread().interrupt();
-            throw new RuntimeException("lock interrupted", e);
+            throw new RuntimeException("lock interrupted");
         }
     }
 

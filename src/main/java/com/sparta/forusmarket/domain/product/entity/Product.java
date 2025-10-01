@@ -35,6 +35,9 @@ public class Product extends BaseEntity {
 
     private BigDecimal discountRate;
 
+    @Version
+    private Long version;
+
     @Builder
     private Product(String name, BigDecimal price, int stock, SubCategoryType subCategory, CategoryType category,
                     BigDecimal discountRate) {
