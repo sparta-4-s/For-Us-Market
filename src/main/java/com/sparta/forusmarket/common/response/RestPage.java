@@ -23,4 +23,3 @@ public class RestPage<T> extends PageImpl<T> {
         super(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 }
-

@@ -8,12 +8,14 @@ import com.sparta.forusmarket.domain.log.entity.OrderLog;
 import com.sparta.forusmarket.domain.log.enums.LogStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class OrderLogResponse {
     private Long id;
     private Long orderId;
