@@ -203,6 +203,26 @@ Spring Cache의 @Cacheable을 적용해서, 처음 요청은 DB에서 가져오�
 | 300만 건 | 1.89s   | 1.90s → 12ms        |
 | 500만 건 | 4.06s   | 3.09s → 20ms → 11ms |
 
+### **캐시 적용 시 발생한 이슈**
+
+- **일반 DTO vs record 클래스**
+→ 기본 생성자가 없으면 Jackson이 객체를 만들 수 없음
+     Record는 컴파일 시 모든 필드를 받는 생성자를 자동으로 만들어줌
+     but, dto는 없을 수 있으므로 `NoArgsConstructor` 또는 `@JsonCreator`가 필요함
+    - @NoArgsConstructor를 추가해 해결
+- **pageImpl 기본 생성자 이슈**
+→ Jackson이 `PageImpl` 생성자를 모름, 역직렬화 실패
+     `PageImpl`을 만들려면 기본 생성자 + 세터 또는 @JsonCreator 생성자가 필요함
+    - @JsonCreator를 통해 해결
+    
+- **LocalDateTime 직렬화**
+→ Java 8 날짜/시간(LocalDateTime 등)**는 기본 ObjectMapper에 등록되어 있지 않음
+    - objectMapper에 LocalDateTime 설정 추가로 해결 (but, 타입 에러 발생)
+    
+- **objectMapper 이슈**
+→ ObjectMapper는 기본적으로 직렬화/역직렬화 시 class type 정보를 포함하지 않음
+    그러므로 직렬화된 데이터에는 type 정보가 존재하지 않는다.
+    - @JsonSerialize, @JsonDeserialize로 해결
 </details>
 
 <details><summary>📌 인기 검색어 Write Back</summary> 
