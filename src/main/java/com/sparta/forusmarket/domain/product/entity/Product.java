@@ -70,9 +70,6 @@ public class Product extends BaseEntity {
     }
 
     public void reduceStock(int quantity) {
-        if (this.stock < quantity)
-            throw new IllegalArgumentException("Out of stock");
-
         this.stock -= quantity;
     }
 }

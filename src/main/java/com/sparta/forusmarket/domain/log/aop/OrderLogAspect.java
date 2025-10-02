@@ -24,7 +24,7 @@ public class OrderLogAspect {
     /**
      * 주문 서비스의 메서드 실행 전/후를 감싸서 주문 성공, 실패, 취소 등의 로그를 DB에 기록하는 AOP 클래스.
      */
-    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderService.createOrder(..))")
+    @Around("execution( * com.sparta.forusmarket.domain.order.service.OrderLockService.createOrderWithRedissonLock(..))")
     public Object createOrder(ProceedingJoinPoint pjp) throws Throwable {
 
         log.info("[AUDIT-BEFORE] method={}", pjp.getSignature().toShortString());

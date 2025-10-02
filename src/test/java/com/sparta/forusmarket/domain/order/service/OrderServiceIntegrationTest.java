@@ -17,7 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -25,6 +28,7 @@ class OrderServiceIntegrationTest {
 
     Long userId;
     Long productId;
+    List<String> logs = new ArrayList<>();
     @Autowired
     private ProductRepository productRepository;
     @Autowired
@@ -33,6 +37,8 @@ class OrderServiceIntegrationTest {
     private OrderRepository orderRepository;
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private OrderLockService orderLockService;
 
     @BeforeEach
     void setUp() {
@@ -45,15 +51,7 @@ class OrderServiceIntegrationTest {
                                 "street",
                                 "zipcode"
                         ))).getId();
-        productId = !productRepository.findAll().isEmpty() ? productRepository.findAll().get(0).getId() :
-                productRepository.save(Product.create(
-                        "name",
-                        BigDecimal.ONE,
-                        4,
-                        SubCategoryType.EBOOK,
-                        CategoryType.BOOKS_MEDIA,
-                        BigDecimal.ONE
-                )).getId();
+        createDummyProduct(10);
     }
 
     @AfterEach
@@ -63,30 +61,43 @@ class OrderServiceIntegrationTest {
         userRepository.deleteAll();
     }
 
-    @Test
-    @DisplayName("여러개의 주문이 동시에 남은 재고를 구매하려 할 때")
-    void createOrder_concurrency_test() throws BrokenBarrierException, InterruptedException {
+    void createDummyProduct(int stock) {
+        productId = productRepository.save(Product.create(
+                "name",
+                BigDecimal.ONE,
+                stock,
+                SubCategoryType.EBOOK,
+                CategoryType.BOOKS_MEDIA,
+                BigDecimal.ONE
+        )).getId();
+    }
+
+    void createOrder_LettuceLock(int numberOfThreads) throws BrokenBarrierException, InterruptedException {
         // given
+        createDummyProduct(100);
         OrderRequest orderRequest = OrderRequest.builder()
                 .userId(userId)
                 .productId(productId)
-                .quantity(2)
+                .quantity(1)
                 .price(BigDecimal.ONE)
                 .city("city")
                 .street("street")
                 .zipcode("111-111")
                 .build();
 
-        int numberOfThreads = 3;
-        ExecutorService executorService = Executors.newFixedThreadPool(24);
-        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads);
+        // 시작 시간 측정
+        ExecutorService executorService = Executors.newFixedThreadPool(60);
+        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads + 1);
 
+        long start = System.currentTimeMillis();
+        AtomicInteger executeCount = new AtomicInteger(0);
         // when
-        for (int i = 0; i < numberOfThreads - 1; i++) {
+        for (int i = 0; i < numberOfThreads; i++) {
             executorService.execute(() -> {
                 try {
                     barrier.await();
-                    orderService.createOrder(orderRequest);
+                    orderLockService.createOrderWithLettuceLock(orderRequest);
+                    executeCount.incrementAndGet();
                 } catch (InterruptedException | BrokenBarrierException e) {
                     e.printStackTrace();
                 }
@@ -95,11 +106,121 @@ class OrderServiceIntegrationTest {
 
         barrier.await();
         executorService.shutdown();
-        executorService.awaitTermination(10, TimeUnit.SECONDS);
+
+        // redis가 포함된 작업 완료 대기
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS))
+            executorService.shutdownNow();
+        // 종료 시간 측정
+        long end = System.currentTimeMillis();
+
+        logs.add("Lettuce Lock 멀티스레드 실행 횟수 : " + executeCount.get() + " 실행 시간 : " + (end - start) + "ms");
+    }
+
+    void createOrder_RedissonLock(int numberOfThreads) throws BrokenBarrierException, InterruptedException {
+        // given
+        createDummyProduct(100);
+        OrderRequest orderRequest = OrderRequest.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(1)
+                .price(BigDecimal.ONE)
+                .city("city")
+                .street("street")
+                .zipcode("111-111")
+                .build();
+
+        // 시작 시간 측정
+        ExecutorService executorService = Executors.newFixedThreadPool(60);
+        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads + 1);
+
+        long start = System.currentTimeMillis();
+        AtomicInteger executeCount = new AtomicInteger(0);
+        // when
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.execute(() -> {
+                try {
+                    barrier.await();
+                    orderLockService.createOrderWithRedissonLock(orderRequest);
+                    executeCount.incrementAndGet();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        barrier.await();
+        executorService.shutdown();
+
+        // redis가 포함된 작업 완료 대기
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS))
+            executorService.shutdownNow();
+        // 종료 시간 측정
+        long end = System.currentTimeMillis();
+
+        logs.add("Redisson Lock 멀티스레드 실행 횟수 : " + executeCount.get() + " 실행 시간 : " + (end - start) + "ms");
+    }
+
+    void createOrder_PessimistLock(int numberOfThreads) throws BrokenBarrierException, InterruptedException {
+        // given
+        createDummyProduct(100);
+        OrderRequest orderRequest = OrderRequest.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(1)
+                .price(BigDecimal.ONE)
+                .city("city")
+                .street("street")
+                .zipcode("111-111")
+                .build();
+
+        // 시작 시간 측정
+        ExecutorService executorService = Executors.newFixedThreadPool(60);
+        CyclicBarrier barrier = new CyclicBarrier(numberOfThreads + 1);
+
+        long start = System.currentTimeMillis();
+        AtomicInteger executeCount = new AtomicInteger(0);
+        // when
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.execute(() -> {
+                try {
+                    barrier.await();
+                    orderService.createOrderWithPessimistLock(orderRequest);
+                    executeCount.incrementAndGet();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        barrier.await();
+        executorService.shutdown();
+
+        // redis가 포함된 작업 완료 대기
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS))
+            executorService.shutdownNow();
+        // 종료 시간 측정
+        long end = System.currentTimeMillis();
+
+        logs.add("Pessimist Lock 멀티스레드 실행 횟수 : " + executeCount.get() + " 실행 시간 : " + (end - start) + "ms");
+    }
+
+    @Test
+    @DisplayName("여러개의 주문이 동시에 남은 재고를 구매하려 할 때")
+    void createOrder_concurrency_test() throws BrokenBarrierException, InterruptedException {
+        int nOT = 10;
+        createOrder_RedissonLock(nOT);
+        createOrder_LettuceLock(nOT);
+        createOrder_PessimistLock(nOT);
+        createOrder_RedissonLock(nOT);
+        createOrder_LettuceLock(nOT);
+        createOrder_PessimistLock(nOT);
+
+        for (String log : logs)
+            System.out.println(log);
 
         // then
         Product product = productRepository.findById(productId).get();
-        Assertions.assertEquals(0, product.getStock());
+        Assertions.assertEquals(2, product.getStock());
     }
 
     @Test
@@ -117,7 +238,7 @@ class OrderServiceIntegrationTest {
                 .build();
 
         // when
-        OrderResponse orderResponse = orderService.createOrder(orderRequest);
+        OrderResponse orderResponse = orderLockService.createOrderWithLettuceLock(orderRequest);
 
         // then
         Assertions.assertEquals(OrderStatus.SUCCESS, orderResponse.status());
@@ -139,7 +260,7 @@ class OrderServiceIntegrationTest {
 
         // when & then
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            orderService.createOrder(orderRequest);
+            orderLockService.createOrderWithLettuceLock(orderRequest);
         });
     }
 }

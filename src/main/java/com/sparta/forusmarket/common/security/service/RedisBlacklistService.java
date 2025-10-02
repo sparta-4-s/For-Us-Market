@@ -1,17 +1,16 @@
 package com.sparta.forusmarket.common.security.service;
 
 import com.sparta.forusmarket.common.properties.JwtSecurityProperties;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class RedisBlacklistService {
 
-    @Qualifier("stringTypeRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtSecurityProperties jwtSecurityProperties;
 
