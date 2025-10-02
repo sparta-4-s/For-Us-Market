@@ -43,8 +43,8 @@ public class User extends BaseEntity {
     }
 
     public static User from(String email, String name, String password, AddressDto addressDto) {
-        Address address = new Address(addressDto.city(), addressDto.street(), addressDto.street());
-        
+        Address address = new Address(addressDto.city(), addressDto.street(), addressDto.zipcode());
+
         return User.builder()
                 .email(email)
                 .name(name)
