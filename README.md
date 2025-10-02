@@ -83,6 +83,7 @@ erDiagram
     PRODUCTS ||--o{ ORDERPRODUCTS: "상품 항목"
 ```
 
+
 ## **📋** 주요 기능
 
 ### 1. 사용자 관리
@@ -115,10 +116,10 @@ erDiagram
 ## 🎯 성능 개선 & 트러블 슈팅
 
 <details><summary>📌Access & Refresh 인증 관리</summary>
-    - Spring Security + JWT 기반 로그인/인증 시스템
-    - Redis 캐시 서버를 활용한 Refresh Token 저장 및 블랙리스트 관리
-    - Refresh Token 로테이션 전략 적용으로 토큰 재사용 방지
-    - HttpOnly 쿠키 적용으로 XSS 기반 토큰 탈취 위험 최소화
+    - Spring Security + JWT 기반 로그인/인증 시스템<br>
+    - Redis 캐시 서버를 활용한 Refresh Token 저장 및 블랙리스트 관리<br>
+    - Refresh Token 로테이션 전략 적용으로 토큰 재사용 방지<br>
+    - HttpOnly 쿠키 적용으로 XSS 기반 토큰 탈취 위험 최소화<br>
 <img width="820" height="473" alt="image" src="https://github.com/user-attachments/assets/6baa5d17-7566-48d8-95e3-186768be788f" />
 </details>
 <details><summary>📌 단계별 쿼리 개선</summary>
@@ -156,7 +157,7 @@ erDiagram
 </details>
 
 <details><summary>📌 로그 기록 조회 성능 개선 (캐시 적용 전/후)</summary>
-### 개선 전
+### **개선 전**
 
 - 동일 유저 로그 반복 조회할 때 매번 DB에서 SELECT 발생
 - 조회량이 많아지면 DB에 과부하
@@ -197,11 +198,12 @@ erDiagram
 
 Spring Cache의 @Cacheable을 적용해서, 처음 요청은 DB에서 가져오지만, 이후 동일 요청은 Redis에서 바로 응답하도록 구조를 바꿨습니다.
 
-| 데이터 개수 | 캐시 적용 전 | 캐시 적용 후 시간 변동       |
-        |--------|---------|---------------------|
-| 100만 건 |         | 617ms → 35ms → 11ms |
-| 300만 건 | 1.89s   | 1.90s → 12ms        |
-| 500만 건 | 4.06s   | 3.09s → 20ms → 11ms |
+| 데이터 개수 | 캐시 적용 전 | 캐시 적용 후 시간 변동        |
+|-------------|--------------|------------------------------|
+| 100만 건    |              | 617ms → 35ms → 11ms          |
+| 300만 건    | 1.89s        | 1.90s → 12ms                 |
+| 500만 건    | 4.06s        | 3.09s → 20ms → 11ms          |
+
 
 ### **캐시 적용 시 발생한 이슈**
 
