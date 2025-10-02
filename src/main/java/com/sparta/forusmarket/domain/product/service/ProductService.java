@@ -1,5 +1,7 @@
 package com.sparta.forusmarket.domain.product.service;
 
+import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
+
 import com.sparta.forusmarket.domain.hotKeywords.entity.HotKeywords;
 import com.sparta.forusmarket.domain.hotKeywords.repository.HotKeywordsRepository;
 import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
@@ -16,8 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +36,11 @@ public class ProductService {
 
     public Page<ProductResponse> getProducts(SubCategoryType category, Pageable pageable) {
         return productRepository.findAllBySubCategory(category, pageable)
+                .map(ProductResponse::of);
+    }
+
+    public Page<ProductResponse> getProductsWithCoveringIndex(SubCategoryType category, Pageable pageable) {
+        return productRepository.findAllBySubCategoryWithCoveringIndex(category, pageable)
                 .map(ProductResponse::of);
     }
 
