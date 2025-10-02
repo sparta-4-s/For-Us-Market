@@ -85,10 +85,8 @@ public class RedissonLockAspect {
             return result;
         } catch (Throwable e) {
             // 트랜잭션 롤백 시 처리
-            if (lock != null && lock.isHeldByCurrentThread()) {
-                lockService.unlock(lock);
-                log.info("프로세스 언락 : {}", uniqueId);
-            }
+            lockService.unlock(lock);
+            log.info("프로세스 언락 : {}", uniqueId);
             throw e;
         }
     }

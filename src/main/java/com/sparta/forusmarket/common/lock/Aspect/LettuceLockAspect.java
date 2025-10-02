@@ -76,16 +76,15 @@ public class LettuceLockAspect {
                     });
                 } else {
                     // 트랜잭션이 없는 경우 바로 언락
-                    lockService.unlock(lockPrefixKey, uniqueId);
-                    log.info("프로세스 언락 : {}", uniqueId);
+                    if (lockService.unlock(lockPrefixKey, uniqueId))
+                        log.info("프로세스 언락 : {}", uniqueId);
                 }
 
                 return result;
             } catch (Throwable e) {
                 // 트랜잭션 롤백 시 처리
-                if (lockService.unlock(lockPrefixKey, uniqueId)) {
+                if (lockService.unlock(lockPrefixKey, uniqueId))
                     log.info("프로세스 언락 (트랜잭션 롤백) : {}", uniqueId);
-                }
                 throw e;
             }
         }

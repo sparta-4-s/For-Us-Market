@@ -35,6 +35,7 @@ public class OrderLockService {
     @Retryable(
             retryFor = {
                     OptimisticLockException.class,
+                    ObjectOptimisticLockingFailureException.class,
                     LockAcquisitionException.class,
                     CannotAcquireLockException.class,
                     PessimisticLockException.class},
