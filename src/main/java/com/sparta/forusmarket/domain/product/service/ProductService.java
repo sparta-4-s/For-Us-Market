@@ -18,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
 
 @Service
@@ -37,6 +40,20 @@ public class ProductService {
     public Page<ProductResponse> getProducts(SubCategoryType category, Pageable pageable) {
         return productRepository.findAllBySubCategory(category, pageable)
                 .map(ProductResponse::of);
+    }
+
+    public Page<ProductResponse> getProductsWithCoveringIndex(SubCategoryType category, Pageable pageable) {
+        return productRepository.findAllBySubCategoryWithCoveringIndex(category, pageable)
+                .map(ProductResponse::of);
+    }
+
+    public List<ProductResponse> getProductsNoOffset(SubCategoryType category,
+                                                     Long lastProductId,      // 이전 페이지의 마지막 id
+                                                     LocalDateTime lastUpdatedAt, // 이전 페이지의 마지막 updatedAt
+                                                     int pageSize) {
+        return productRepository.findAllBySubCategoryNoOffset(category, lastProductId, lastUpdatedAt, pageSize).stream()
+                .map(ProductResponse::of)
+                .toList();
     }
 
     public ProductResponse getProductById(Long productId) {
@@ -63,6 +80,7 @@ public class ProductService {
     }
 
     //캐싱x, DB 이용
+    @Transactional
     public Page<ProductResponse> search(String name, SubCategoryType category, Pageable pageable) {
 
         Page<Product> product = productRepository.search(name, category, pageable);
