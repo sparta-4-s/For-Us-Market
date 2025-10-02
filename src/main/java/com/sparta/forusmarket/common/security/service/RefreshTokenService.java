@@ -5,22 +5,21 @@ import com.sparta.forusmarket.common.security.dto.TokenResponse;
 import com.sparta.forusmarket.common.security.utils.JwtUtil;
 import com.sparta.forusmarket.domain.user.dto.response.UserResponse;
 import com.sparta.forusmarket.domain.user.service.UserService;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
 
-    @Qualifier("stringTypeRedisTemplate")
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtSecurityProperties jwtSecurityProperties;
     private final JwtUtil jwtUtil;

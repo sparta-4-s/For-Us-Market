@@ -37,15 +37,6 @@ public class RedisConfig {
         return redisTemplate;
     }
 
-    @Bean(name = "stringTypeRedisTemplate")
-    public RedisTemplate<String, String> stringTypeRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new StringRedisSerializer());
-        return redisTemplate;
-    }
-
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
