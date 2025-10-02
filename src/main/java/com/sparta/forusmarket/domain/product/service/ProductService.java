@@ -1,7 +1,6 @@
 package com.sparta.forusmarket.domain.product.service;
 
-import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
-
+import com.sparta.forusmarket.common.response.RestPage;
 import com.sparta.forusmarket.domain.hotKeywords.entity.HotKeywords;
 import com.sparta.forusmarket.domain.hotKeywords.repository.HotKeywordsRepository;
 import com.sparta.forusmarket.domain.product.dto.request.ProductEditRequest;
@@ -11,15 +10,18 @@ import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.exception.ProductNotFoundException;
 import com.sparta.forusmarket.domain.product.repository.ProductRepository;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static com.sparta.forusmarket.domain.product.exception.ProductErrorCode.PRODUCT_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +30,6 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final HotKeywordsRepository hotKeywordsRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
     public ProductResponse createProduct(ProductRegisterRequest request) {
@@ -79,26 +80,30 @@ public class ProductService {
     }
 
     //캐싱x, DB 이용
+    @Transactional
     public Page<ProductResponse> search(String name, SubCategoryType category, Pageable pageable) {
 
-        Page<Product> product = productRepository.search(name, category, pageable); //상품 검색
-        if (hotKeywordsRepository.findByKeyword(name).isEmpty()) {
+        Page<Product> product = productRepository.search(name, category, pageable);
+        if (hotKeywordsRepository.findByKeyword(name) == null) {
             hotKeywordsRepository.save(HotKeywords.of(name)); //검색 키워드 저장
         }
 
-        /*hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가*/
+        hotKeywordsRepository.findByKeyword(name).increaseCount(); //검색 키워드의 SearchCount 값 누적 증가
 
         return product.map(ProductResponse::of);
     }
 
     //캐싱o, redis 이용
-    @Cacheable(value = "product", key = "'all'")
-    public Page<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
+    @Cacheable(cacheNames = "product", key = "#name + ':' + #pageable.pageSize + '-' + #pageable.pageNumber")
+    public RestPage<ProductResponse> searchByCaching(String name, SubCategoryType category, Pageable pageable) {
 
-        Page<Product> product = productRepository.search(name, category, pageable);
+        Page<Product> products = productRepository.search(name, category, pageable);
 
-        String key = "product:ranking";
-        redisTemplate.opsForZSet().incrementScore(key, name, 1);
-        return product.map(ProductResponse::of);
+        return new RestPage<>(products.map(ProductResponse::of));
+    }
+
+
+    @CacheEvict(value = "product")
+    public void evictProductCache() { //캐시 삭제
     }
 }

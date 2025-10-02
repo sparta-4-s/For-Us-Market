@@ -1,11 +1,16 @@
 package com.sparta.forusmarket.domain.product.dto.response;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.sparta.forusmarket.domain.product.entity.Product;
 import com.sparta.forusmarket.domain.product.type.CategoryType;
 import com.sparta.forusmarket.domain.product.type.SubCategoryType;
+import lombok.Builder;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.Builder;
 
 @Builder
 public record ProductResponse(
@@ -16,7 +21,11 @@ public record ProductResponse(
         SubCategoryType subCategory,
         CategoryType category,
         BigDecimal discountRate,
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
         LocalDateTime createdAt,
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
         LocalDateTime updatedAt
 ) {
 

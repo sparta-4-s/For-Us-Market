@@ -12,9 +12,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
@@ -88,6 +93,16 @@ public class ProductController {
     public ResponseEntity<ApiPageResponse<ProductResponse>> searchByCaching(@RequestParam(required = false) String name,
                                                                             @RequestParam(required = false) SubCategoryType category,
                                                                             @PageableDefault(page = 0, size = 10) Pageable pageable) {
+
+        String key = "product:ranking";
+        redisTemplate.opsForZSet().incrementScore(key, name, 1); //검색 시 캐시 score 증가
         return ApiPageResponse.success(productService.searchByCaching(name, category, pageable));
     }
+
+    @DeleteMapping("/api/v2/products/search")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct() {
+        productService.evictProductCache();
+        return ApiResponse.success(null);
+    }
+    //테스트는 안했습니다
 }

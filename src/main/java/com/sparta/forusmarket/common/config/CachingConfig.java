@@ -26,11 +26,11 @@ public class CachingConfig {
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
-                .prefixCacheNameWith("v7:"); // 캐시 네임스페이스 버저닝
+                        RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
 
         Map<String, RedisCacheConfiguration> perCache = new HashMap<>();
-        perCache.put("product", base.entryTtl(Duration.ofMinutes(5)));
+        perCache.put("product", base.entryTtl(Duration.ofMinutes(30)));
+        perCache.put("product:ranking", base.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(base)
