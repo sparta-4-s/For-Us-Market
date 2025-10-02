@@ -1,4 +1,4 @@
-# 📦 E-Commerce Platform 📦
+# 🛍️ For Us Market
 
 ## **💻 프로젝트 소개**
 
